@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/main.js --bundle --minify --format=esm --target=es2022 --legal-comments=eof --outfile=js/app.js",
+    "build": "esbuild src/main.js --bundle --minify --format=esm --target=es2022 --legal-comments=eof --outfile=js/app.js && node tools/stamp.mjs",
     "watch": "esbuild src/main.js --bundle --format=esm --target=es2022 --outfile=js/app.js --watch"
   },
   "devDependencies": {
