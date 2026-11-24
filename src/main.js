@@ -6,6 +6,7 @@ import { startWater } from "./water.js";
 import { audio } from "./audio.js";
 import sizes from "./img-sizes.json";
 import { mountBook } from "./flipbook.js";
+import { showPhilosophy } from "./philosophy.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -218,9 +219,22 @@ function showBlank(name) {
   requestAnimationFrame(() => page.classList.add("show"));
 }
 
+let disposePage = null;
+
+function showPhilosophyPage() {
+  lastProject = null;
+  document.title = "Design Philosophy · Yohan Mireu Lee";
+  document.body.dataset.view = "philosophy";
+  page.hidden = false;
+  scrollTo(0, 0);
+  disposePage = showPhilosophy(page, { onDone: () => page.classList.add("show") });
+}
+
 function clearPage() {
   viewer?.dispose();
   viewer = null;
+  disposePage?.();
+  disposePage = null;
   page.classList.remove("show");
   page.hidden = true;
   page.innerHTML = "";
@@ -238,7 +252,9 @@ function route() {
     // Opening a tile already expands it to fill the screen, so skip the fade in that case.
     const fromExpand = wasHome && carousel?.expand.index !== -1 && projects.some((p) => p.slug === key);
     if (!first && !fromExpand) { veil.classList.add("on"); await wait(320); }
-    if (key === "about" || key === "contact") {
+    if (key === "philosophy") {
+      hideHome(); clearPage(); showPhilosophyPage(); markCurrent(key);
+    } else if (key === "about" || key === "contact") {
       hideHome(); clearPage(); showBlank(key === "about" ? "About" : "Contact"); markCurrent(key);
     } else if (key) {
       hideHome(); clearPage(); showProject(key); markCurrent("");
