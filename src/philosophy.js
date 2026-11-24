@@ -1,4 +1,4 @@
-// "Design Philosophy": the Quiet Geometry manifesto (DESN 345, 2026), set as a scrolling piece.
+// "Design Philosophy": the Quiet Geometry manifesto, set as a scrolling piece.
 // A compass construction draws itself behind the title; then each paragraph gets a line drawing
 // on a sticky canvas that builds as you read it, and the words brighten as they pass the reading
 // line. The five drawings follow the argument: scattered points settling onto a grid (order from
@@ -78,8 +78,6 @@ export function showPhilosophy(page, { onDone } = {}) {
         <svg class="ph-construct" viewBox="0 0 1000 1000" aria-hidden="true"><g>${construction()}</g></svg>
         <p class="label ph-kicker">Design Philosophy</p>
         <h1 class="ph-title"><span class="ph-row">${letters("Quiet", 0.35)}</span><span class="ph-row">${letters("Geometry", 0.6)}</span></h1>
-        <p class="ph-sub">a manifesto—2026 edition</p>
-        <p class="ph-credit">Yohan Mireu Lee<br>DESN 345 — Design III<br>Professor Julia Hummel</p>
         <div class="ph-cue" aria-hidden="true"><span></span></div>
       </header>
       <section class="ph-body">

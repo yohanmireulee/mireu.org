@@ -4181,8 +4181,6 @@ void main() {
         <svg class="ph-construct" viewBox="0 0 1000 1000" aria-hidden="true"><g>${yb()}</g></svg>
         <p class="label ph-kicker">Design Philosophy</p>
         <h1 class="ph-title"><span class="ph-row">${Bd("Quiet",.35)}</span><span class="ph-row">${Bd("Geometry",.6)}</span></h1>
-        <p class="ph-sub">a manifesto\u20142026 edition</p>
-        <p class="ph-credit">Yohan Mireu Lee<br>DESN 345 \u2014 Design III<br>Professor Julia Hummel</p>
         <div class="ph-cue" aria-hidden="true"><span></span></div>
       </header>
       <section class="ph-body">
