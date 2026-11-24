@@ -13,7 +13,7 @@ export class Viewer {
     this.host = host;
     this.opt = Object.assign({ yaw: 30, pitch: 14, zoom: 0.9, exposure: 1, env: 1, ground: true, autoRotate: true }, options);
 
-    const renderer = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" }));
+    const renderer = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance", logarithmicDepthBuffer: true }));
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -133,15 +133,13 @@ export class Viewer {
   resetView(instant) {
     const o = this.opt, r = this.radius, target = this.center.clone();
     if (o.target) target.add(new THREE.Vector3(o.target[0] * this.size.x, o.target[1] * this.size.y, o.target[2] * this.size.z));
-    const dist = (r / Math.sin((this.camera.fov * DEG) / 2)) * o.zoom;
     const yaw = o.yaw * DEG, pitch = o.pitch * DEG;
-    const pos = new THREE.Vector3(
-      target.x + dist * Math.sin(yaw) * Math.cos(pitch),
-      target.y + dist * Math.sin(pitch),
-      target.z + dist * Math.cos(yaw) * Math.cos(pitch));
+    const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+    const dist = this.fitDistance(target, dir) * o.zoom;
+    const pos = target.clone().addScaledVector(dir, dist);
     this.controls.minDistance = r * (o.minZoom ?? 0.12);
     this.controls.maxDistance = r * 5;
-    this.camera.near = r * 5e-3;
+    this.camera.near = r * 0.02;
     this.camera.far = r * 40;
     this.camera.updateProjectionMatrix();
     if (instant) {
@@ -151,6 +149,27 @@ export class Viewer {
       return;
     }
     this.fly = { from: this.camera.position.clone(), to: pos, tf: this.controls.target.clone(), tt: target, t0: performance.now() };
+  }
+
+  // Smallest camera distance at which the whole bounding box fits inside the usable part of the
+  // stage (clear of the header above and the tool buttons below), for both width and height.
+  fitDistance(target, dir) {
+    const W = this.host.clientWidth || 1, H = this.host.clientHeight || 1;
+    const padTop = 110, padBottom = 96, padSide = Math.min(64, W * 0.06);
+    const t = Math.tan((this.camera.fov * DEG) / 2);
+    const tanV = t * Math.max(0.3, (H - padTop - padBottom) / H);
+    const tanH = t * (W / H) * Math.max(0.3, (W - padSide * 2) / W);
+    const z = dir.clone().normalize();
+    const x = new THREE.Vector3(0, 1, 0).cross(z).normalize();
+    const y = z.clone().cross(x);
+    const b = this.box, p = new THREE.Vector3();
+    let d = 0;
+    for (let i = 0; i < 8; i++) {
+      p.set(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).sub(target);
+      const cz = p.dot(z);
+      d = Math.max(d, cz + Math.abs(p.dot(x)) / tanH, cz + Math.abs(p.dot(y)) / tanV);
+    }
+    return d;
   }
 
   setAutoRotate(on) { this.controls.autoRotate = on; }
@@ -198,6 +217,7 @@ export class Viewer {
     this.renderer.domElement.style.height = "100%";
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    if (this.model && !this.interacted && !this.fly) this.resetView(true);
   }
 
   start() {

@@ -31,13 +31,14 @@ void main(){
   vec3 L = normalize(vec3(-0.35, 0.45, 1.0));
   float spec = pow(max(dot(reflect(-L, n), vec3(0, 0, 1)), 0.0), 60.0);
   float sheen = pow(1.0 - n.z, 2.0);
-  vec3 deep = vec3(0.018, 0.022, 0.029);
-  vec3 col = deep + vec3(0.03, 0.042, 0.055) * sheen * 1.4 + vec3(0.5, 0.58, 0.66) * spec * 0.035;
-  // faint light where the surface crests
-  col += vec3(0.008, 0.011, 0.014) * smoothstep(0.6, 0.95, h);
+  // calm deep blue water: lighter in the middle of the screen, sky-blue sheen on the ripples
+  vec3 deep = vec3(0.095, 0.175, 0.245);
+  vec3 col = deep + vec3(0.07, 0.13, 0.17) * sheen * 1.5 + vec3(0.7, 0.85, 0.95) * spec * 0.06;
+  // soft light where the surface crests
+  col += vec3(0.016, 0.03, 0.04) * smoothstep(0.55, 0.95, h);
   // vignette keeps the edges darkest, like the reference sites
   float v = smoothstep(1.25, 0.25, length((uv - 0.5) * vec2(uRes.x / uRes.y, 1.0)));
-  col *= mix(0.55, 1.0, v);
+  col *= mix(0.72, 1.0, v);
   o = vec4(col, 1.0);
 }`;
 

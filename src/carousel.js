@@ -203,7 +203,7 @@ export class Carousel {
       uPointer: { value: new THREE.Vector2() }, uPointerShift: { value: 0 }, uBlur: { value: 0 }, uBlurZone: { value: 0 },
       uAberration: { value: 0 }, uGrain: { value: C.grain }, uTime: { value: 0 }, uShimmer: { value: 0 },
       uShimmerScale: { value: 1 }, uShimmerSpeed: { value: 0 }, uShimmerZone: { value: 1 },
-      uBackground: { value: new THREE.Color("#0b0d10") }, uIntro: { value: startExpanded ? 1 : 0 },
+      uBackground: { value: new THREE.Color("#16283a") }, uIntro: { value: startExpanded ? 1 : 0 },
     });
     for (const k of Object.keys({ ...C.panorama, ...C.scene })) shared["u" + k[0].toUpperCase() + k.slice(1)] = { value: 0 };
 
@@ -228,6 +228,7 @@ export class Carousel {
         mat.userData.imageAspect = tex.image.width / tex.image.height;
         this.cover(mat);
         mesh.visible = true;
+        if (s.tileVideo) this.attachVideo(s.tileVideo, mat, tex);
       }).catch((e) => console.warn("Couldn't load", s.tile, e));
       return mesh;
     });
@@ -554,7 +555,27 @@ export class Carousel {
   get index() { return mod(Math.round(this.track.position), this.T); }
 
   // Stop rendering while another page is showing; pick up again on return.
+  // An animated tile: the still image shows first, then the looping video takes over once it plays.
+  attachVideo(url, mat, still) {
+    const v = document.createElement("video");
+    Object.assign(v, { src: url, muted: true, loop: true, playsInline: true, preload: "auto" });
+    v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+    (this.videos ||= []).push(v);
+    v.addEventListener("playing", () => {
+      if (this.disposed || mat.uniforms.uMap.value?.isVideoTexture) return;
+      const tex = new THREE.VideoTexture(v);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      mat.uniforms.uMap.value = tex;
+      mat.uniforms.uTextureSize.value.set(v.videoWidth, v.videoHeight);
+      still.dispose();
+    }, { once: true });
+    v.play().catch(() => {}); // autoplay can be refused (e.g. low-power mode); the still stays
+  }
+
   pause() {
+    this.videos?.forEach((v) => v.pause());
     this.active = false;
     this.drag = null;
     this.host.classList.remove("is-dragging", "is-clickable");
@@ -563,6 +584,7 @@ export class Carousel {
 
   // Come back from a project page: start fully expanded on that tile, then shrink back into the ring.
   resume(fromIndex = null) {
+    this.videos?.forEach((v) => v.play().catch(() => {}));
     this.active = true;
     this.lastNow = undefined;
     this.sized = null;
@@ -584,6 +606,7 @@ export class Carousel {
 
   dispose() {
     this.disposed = true;
+    this.videos?.forEach((v) => { v.pause(); v.removeAttribute("src"); v.load(); });
     this.ac.abort();
     this.ro.disconnect();
     clearTimeout(this.snapTimer);

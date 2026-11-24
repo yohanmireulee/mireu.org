@@ -14,7 +14,13 @@ Portfolio site for Yohan Mireu Lee, served by GitHub Pages from the `main` branc
   - `audio.js`: UI sounds and music (UI sound on and music off by default)
   - `projects.js`: project write-ups, gallery layout and viewer settings, in carousel order
 - `js/app.js`: the built bundle the page loads (made from `src/` plus three.js; don't edit by hand)
-- `assets/tiles/`: 3:2 carousel tiles (`tools/make_tiles.py` rebuilds them)
+- `assets/tiles/`: 3:2 carousel tiles (`tools/make_tiles.py` rebuilds most of them; the dog and
+  trophy tiles were rendered from the .blend files, and `atoms-for-air.mp4` is the animated tile)
+- `assets/book/`: booklet pages for the page-turning viewer (`tools/make_books.py` renders them from the PDFs)
+- `src/img-sizes.json`: gallery image sizes, used to lay out the rows; run `python3 tools/image_sizes.py`
+  after adding or replacing gallery images
+- `tools/models/`: one-off scripts used to repair the .glb models (smooth normals, plaque lettering,
+  missing paintings, laptop finish)
 - `assets/models/`: one compressed 3D model per project (.glb)
 - `assets/img/<project>/`: gallery images, numbered in page order
 - `assets/audio/`: Kenney Interface Sounds (CC0) and the music track

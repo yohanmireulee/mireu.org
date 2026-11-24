@@ -7,6 +7,7 @@ lineup: transparent product cutouts side by side on a studio backdrop.
 """
 import sys
 from pathlib import Path
+import numpy as np
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw
 
 W, H = 1800, 1200
@@ -46,30 +47,40 @@ def pad(src, scale=1.0, dim=0.55):
     return bg
 
 
-def lineup(paths, height=0.84, gap=0.07):
-    bg = Image.new("RGB", (W, H))
-    px = bg.load()
-    for y in range(H):
-        for x in range(0, W, 1):
-            dx, dy = (x - W * 0.5) / W, (y - H * 0.42) / H
-            v = max(0.0, 1 - (dx * dx * 1.6 + dy * dy * 2.2) ** 0.5 * 1.25)
-            c = round(14 + 30 * v)
-            px[x, y] = (c, c + 1, c + 3)
-    ims = [Image.open(p).convert("RGBA") for p in paths]
-    h = round(H * height)
-    ims = [im.resize((round(im.width * h / im.height), h), Image.LANCZOS) for im in ims]
-    total = sum(im.width for im in ims) + gap * W * (len(ims) - 1)
-    x = (W - total) / 2
-    top = round((H - h) * 0.42)
+def backdrop(w, h, lo=(22, 25, 30), hi=(66, 72, 80), cy=0.42):
+    """Soft studio backdrop: a radial glow computed in floating point, with fine grain added
+    before rounding to 8 bits so the gradient has no visible steps (banding)."""
+    y, x = np.mgrid[0:h, 0:w].astype(np.float32)
+    dx, dy = (x - w * 0.5) / w, (y - h * cy) / h
+    v = np.clip(1 - np.sqrt(dx * dx * 1.6 + dy * dy * 2.2) * 1.25, 0, 1) ** 1.4
+    lo, hi = np.array(lo, np.float32), np.array(hi, np.float32)
+    img = lo + (hi - lo) * v[..., None]
+    rng = np.random.default_rng(7)
+    img += rng.normal(0, 1.6, (h, w, 1)).astype(np.float32)
+    return Image.fromarray(np.clip(np.round(img), 0, 255).astype(np.uint8))
+
+
+def place(bg, ims, height, gap, top_frac=0.42, shadow=True):
+    """Scale cutouts to a common height and set them side by side, centred, with floor shadows."""
+    w, h = bg.size
+    hh = round(h * height)
+    ims = [im.resize((round(im.width * hh / im.height), hh), Image.LANCZOS) for im in ims]
+    total = sum(im.width for im in ims) + gap * w * (len(ims) - 1)
+    x = (w - total) / 2
+    top = round((h - hh) * top_frac)
     for im in ims:
-        # soft floor shadow
-        sh = Image.new("L", (im.width * 3, 60), 0)
-        ImageDraw.Draw(sh).ellipse((im.width * 0.6, 10, im.width * 2.4, 50), fill=120)
-        sh = sh.filter(ImageFilter.GaussianBlur(14))
-        bg.paste((4, 4, 6), (round(x - im.width), top + h - 30), sh)
+        if shadow:
+            sh = Image.new("L", (im.width * 3, 80), 0)
+            ImageDraw.Draw(sh).ellipse((im.width * 0.55, 14, im.width * 2.45, 66), fill=110)
+            sh = sh.filter(ImageFilter.GaussianBlur(18))
+            bg.paste((8, 9, 12), (round(x - im.width), top + hh - 40), sh)
         bg.paste(im, (round(x), top), im)
-        x += im.width + gap * W
+        x += im.width + gap * w
     return bg
+
+
+def lineup(paths, height=0.84, gap=0.07):
+    return place(backdrop(W, H), [Image.open(p).convert("RGBA") for p in paths], height, gap)
 
 
 def main(at_renders):
@@ -79,15 +90,18 @@ def main(at_renders):
         "animal-crossing": lambda: crop(IMG / "animal-crossing/01.webp", 0.5, 0.6),
         "atoms-for-air": lambda: crop(IMG / "atoms-for-air/01.webp", 0.5, 0.5),
         "constellation-shelter": lambda: crop(IMG / "constellation-shelter/01.webp", 0.5, 0.55),
-        "dog-scene": lambda: pad(IMG / "dog-scene/01.webp", dim=1.0),
+        # dog-scene: rendered at 3:2 from Dog Scene/3D Files/dog6.blend (EEVEE, lens 75 mm)
         "kitchen-scene": lambda: crop(IMG / "kitchen-scene/01.webp", 0.5, 0.5),
         "museum-exhibition": lambda: crop(IMG / "museum-exhibition/03.webp", 0.5, 0.5),
-        "probable-cause": lambda: pad(ROOT / "tools/sources/probable-cause-cover.webp"),
-        "restaurant-rebrand": lambda: pad(IMG / "restaurant-rebrand/04.webp"),
-        "schrodingers-american": lambda: crop(IMG / "schrodingers-american/02.webp", 0.5, 0.5),
+        "probable-cause": lambda: crop(IMG / "probable-cause/01.webp", 0.5, 0.5),
+        "billiards-rebrand": lambda: crop(IMG / "billiards-rebrand/04.webp", 0.5, 0.5),
+        "schrodingers-american": lambda: crop(ROOT / "tools/sources/schrodingers-cover.webp", 0.5, 0.5),
     }
+    only = sys.argv[2:]
     for slug, fn in jobs.items():
-        fn().save(OUT / f"{slug}.webp", quality=84, method=6)
+        if only and slug not in only:
+            continue
+        fn().save(OUT / f"{slug}.webp", quality=90, method=6)
         print("wrote", slug)
 
 

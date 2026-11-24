@@ -1,5 +1,348 @@
 // Project data: write-ups, gallery layout and 3D viewer settings for each portfolio piece.
-// Order here is the carousel order. `rows` lists gallery image numbers per row (assets/img/<slug>/NN.webp).
-export const projects = [{ slug: "air-towel", title: "Air Towel", course: "DESN 370 Entrepreneurship For Designers", paras: ["The Air Towel is a handheld device that dries you off after a shower with a thin blade of fast-moving air instead of a towel. Bath towels sit damp in a warm bathroom and grow bacteria within days, and rubbing your skin with one is rougher on it than most people think. The Air Towel never touches you, and it cuts down on the towel laundry a household runs every week.", `The class was about taking a product from idea to pitch, so I treated it like a real hardware startup: market sizing, a bill of materials, cost of goods, a stage-gate plan and a technical whitepaper, ending in a pitch deck. The engineering side is where I had the most fun. A single motor can't push enough air through a 1 mm slit, so the design stacks three small high-speed motors in series with stator vanes between them. The blade and vane counts are prime numbers (11 and 13) so it hums instead of whistling. A tapered "coat-hanger" plenum spreads the air evenly across the 5-inch nozzle, and the power electronics live in a separate spine along the back, away from the air path.`, "I modeled the full assembly in PTC Onshape, including the motors, heater, filter, buttons, screen, magnetic wall mount and the safety plug on the cord, then textured and rendered it in Blender. I also made a cut-in-half version to show how everything fits inside."], software: ["PTC Onshape", "Blender", "Pixelmator Pro", "Google Slides"], cover: "assets/covers/air-towel.webp", rows: [[1, 2, 3, 4], [5, 6, 7], [8, 9, 10, 11]], view: { model: "airtowel.glb", yaw: 28, pitch: 8, zoom: 1, explode: true, explodeScale: 1.6, exposure: 1.05 } }, { slug: "constellation-shelter", title: "Constellation Shelter", course: "DESN 345 Design III", paras: ["We were each assigned a New York City neighborhood and asked to design something that preserves its cultural identity as it changes. I got Flushing. I lived in College Point, right next door, for almost twenty years and never knew that Flushing has been a place of refuge for over 350 years: Quakers in the 1650s, freedom seekers on the Underground Railroad in the 1840s, and immigrants today. If I didn't know, a lot of the people waiting at these bus stops probably don't either.", `So I designed a bus shelter. Freedom seekers navigated north by following the Big Dipper to the North Star, so the roof has the whole Great Bear constellation cut into it, and sunlight through the cutouts lands as stars on the sidewalk where people stand. The shelters would sit at four stops along a "Flushing Freedom Mile": Macedonia AME Church, the Bowne House, the Friends Meeting House and the Lewis Latimer House. The outer display is the same at every stop, so the four read as one trail. The inner display tells that stop's story to whoever is waiting on the bus, in the four languages you hear on those corners: English, Chinese, Korean and Spanish.`, "I kept the shelter itself clean and modern so it could realistically get past the community boards. The history lives in the details, not the style. I also modeled a real NYC bus stop pole with all of its signage, because a shelter without one looked naked, and any New Yorker would notice."], software: ["Pixelmator Pro", "Figma", "PTC Onshape", "Blender"], cover: "assets/covers/constellation-shelter.webp", rows: [[1], [2, 3], [4], [5, 6, 7], [8, 9, 10], [11]], view: { model: "shelter.glb", yaw: 32, pitch: 12, zoom: 0.95, explode: true, explodeScale: 0.7, ground: false, target: [0, -0.08, 0] } }, { slug: "atoms-for-air", title: "Atoms for Air", course: "DESN 345 Design III", paras: ["The prompt was to reimagine propaganda for an environmental cause. I made Atoms for Air, a public service campaign from a made-up nonprofit of nuclear engineers and climate scientists. It asks people to give nuclear energy a second look, then do one small thing: contact their representative and ask for faster, more predictable licensing for new plants.", "Most of what people believe about nuclear comes from Chernobyl, The Simpsons and disaster movies. The numbers tell a different story. Per unit of electricity, nuclear is about as safe as wind and solar, it has the lowest lifecycle carbon of any source, and all the used fuel the U.S. has ever made would fit on one football field. The campaign takes one fear at a time and answers it with one number and one picture.", "I made it look nothing like nuclear usually looks. No hazard signs, no green glow, no gray towers. It's soft blues, mint and butter yellow, rounded type, and a bluebird named Pip who wears round glasses. Birds are sensitive to air pollution, and the glasses say Pip did the reading. There are three pieces. The billboard has to land in a few seconds from the road. The Instagram carousel carries the details for anyone who swipes. The animated poster ends on a QR code that takes you to a page for finding your representative.", "The uncomfortable part is that this is still propaganda. It uses the same tools as the gas stove influencers: friendly visuals, selective facts and a clear call to action. Everything it says is true, but it doesn't say everything. Making it showed me that the line between educating people and persuading them is mostly about what you leave out."], software: ["Figma", "Adobe Photoshop"], cover: "assets/covers/atoms-for-air.webp", rows: [[1], [2, 3], [4, 5], [6, 7], [8]], view: { video: "poster.mp4", poster: "poster.webp" } }, { slug: "probable-cause", title: "Probable Cause", course: "DESN 172 Game Design", paras: ["Probable Cause is a tabletop game where smugglers try to bluff their way through a border checkpoint in identical box trucks, while one Border Patrol agent tries to figure out who's lying, one door at a time. It plays 3 to 5 people (2 with a variant) in about 20 to 30 minutes.", "Every truck looks and weighs the same, so the agent can't learn anything from the pieces. All they have to go on is how people act: who's rushing, who's stalling, who suddenly won't stop talking. The smugglers load their trucks together while the agent looks away, so they know exactly what everyone else is carrying. That means they can snitch on each other, pretend to, or make a deal and break it two turns later. The title comes from the legal idea that you need a reason to search someone. If the agent opens a clean truck, the driver files a complaint and the agent loses their next search.", "I modeled every part from scratch in PTC Onshape and printed the whole game on my Bambu Lab H2D, about 20 hours over 3 days. The board is three dovetailed pieces, the trucks have working wheels and magnetic rear hatches that hold exactly four boxes, and the agent wears a magnetic badge so you don't have to poke holes in your shirt. The only thing I bought was two spools of filament. I designed the graphics in Illustrator and the 8-page rulebook in Figma, then printed, stitched and trimmed it myself.", "To balance the rules I wrote a Monte Carlo simulation in Python that plays the game 20,000 times per setup with simple bots. My first version had the agent winning over 90% of games, which is how the clean-truck complaint rule was born. After a few rounds of changes every seat lands close to a fair share, so the board stays fair and the table psychology decides who wins. At our first family game night, my wife played the agent and our toy poodle Beanie won 5 to 1. You can't read a poodle."], software: ["PTC Onshape", "Bambu Studio", "Adobe Illustrator", "Figma", "Python", "Blender"], cover: "assets/covers/probable-cause.webp", rows: [[1, 2], [3, 4], [5, 6], [7, 8], [9]], view: { model: "probable.glb", yaw: 150, pitch: 38, zoom: 0.85, exposure: 0.95 } }, { slug: "schrodingers-american", title: "Schr\xF6dinger's American", course: "DESN 245 Typography II", paras: [`The brief asked for a booklet and a poster built around at least three texts with different perspectives on one topic. I chose growing up undocumented in the United States, and instead of collecting other people's writing, I wrote all of it myself: a poem called "Original Sin," a personal essay called "The Price of Home" about enlisting in the Army as a 68W combat medic to earn my citizenship, and "The Sins of Our Fathers," a debate-style essay that argues both sides like a courtroom. I didn't think it was right to borrow someone else's words when I had lived it.`, `The whole booklet is designed to look and feel like a USCIS case file. When I was younger I couldn't afford a lawyer, so I filled out hundreds of pages of that paperwork myself, and I wanted the design to carry that cold, bureaucratic weight. Article titles are set in Nitti Typewriter for the government-document tone. Body copy is Freight Text, a serif that keeps the heavier arguments grounded. Headers and captions use Interstate, which is based on the lettering on U.S. highway signs, a quiet nod to the road and to crossing borders. Inside, I included my Army service portrait from 2017 in a collage cut-out style inspired by Carin Goldberg's cover for "Kafka's Last Trial."`, `The poster, also titled "Original Sin," is a hand drawn illustration of a hand reaching for an apple, after Hugo van der Goes's The Fall of Man.`, "I didn't want a generic mockup, so I modeled the booklet cover in PTC Onshape and 3D printed it. Beige PLA gives it the look of a manila folder, black PLA forms the lettering and a cat made of stars and stripes on the front, and neodymium magnets snap it shut. A normal printed hinge would pinch and wear out the spine, so I designed a dual-pivot hinge and sewed the pages directly into it. I then rendered all of the deliverables in Blender."], software: ["Adobe InDesign", "Adobe Photoshop", "PTC Onshape", "Blender"], cover: "assets/covers/schrodingers-american.webp", rows: [[1], [2], [3], [4], [5]], view: { model: "schrodinger.glb", yaw: 0, pitch: 62, zoom: 0.95, explode: true, explodeScale: 2.2 } }, { slug: "museum-exhibition", title: "Museum Exhibition", course: "DESN 370 Entrepreneurship For Designers", paras: ["For this project I designed a gallery room for an exhibition of vintage Japanese art. Most of the works feature flowers, trees, gardens and landscapes, and traditional Japanese households took real pride in their gardens, so I built the room around that idea. A wrap-around planter with tall wild grass and bamboo frames the space, and a large live-edge bench gives people a place to sit and take the art in slowly.", "The materials were picked to keep the room warm and calm. Rattan pendant lights give off a soft glow. The display lamps and picture frames are brass, a naturally warm metal that picks up a vintage patina. Wood tones run through the planter and the slatted divider wall, and faux-stone wall tiles nod to a traditional garden.", "Because this was an entrepreneurship class, I also priced it out the way a contractor would: lumber, soil, siding, freight and labor. The labor rates are on the high side on purpose. Crews working around museum pieces carry expensive insurance, and the work would happen overnight while the rest of the museum is open.", "I built the room layout, frames and planter in PTC Onshape, then brought it into Blender to texture, light and render it. The decorative props and some textures came from open-license libraries."], software: ["PTC Onshape", "Blender"], cover: "assets/covers/museum-exhibition.webp", rows: [[1], [2, 3], [4, 5], [6, 7]], view: { model: "museum.glb", yaw: 40, pitch: 42, zoom: 0.9, cutaway: true, ground: false, exposure: 1.05 } }, { slug: "kitchen-scene", title: "3D Kitchen Scene", course: "3D Modeling - Project 1", paras: ["Tasked with designing a kettle and two other objects of our choice, I leveraged my prior experience with NURBs based CAD software to model the kettle, a teacup, and a laptop. I then took it a step further and modeled all the background assets as well, creating a detailed kitchen counter complete with cabinets, drawers, tile backsplash, and an outlet. Fun fact, you can actually see me designing this scene on the laptop screen! I took a screenshot of Onshape after I finished the modeling phase and composited the screenshot into the laptop within Blender. This project was by far the most time consuming of any class this semester, but I think it was well worth the effort. I hope you agree!"], software: ["PTC Onshape", "Blender 4.5"], cover: "assets/covers/kitchen-scene.webp", rows: [[1], [2, 3, 4, 5], [6]], view: { model: "kitchen.glb", yaw: 12, pitch: 14, zoom: 0.62, ground: false, target: [0, 0.18, 0] } }, { slug: "animal-crossing", title: "3D Animal Crossing Scene", course: "3D Modeling - Project 3", paras: ['Tasked with creating original characters and compositing those characters into an existing image, my wife insisted that I create a frog family in the style of the video game "Animal Crossing: New Horizons," her favorite Nintendo Switch game. The frog family is supposed to represent our family, which consists of my wife, my puppy, and myself. The frog theme is a running joke derived from a Korean folk story my mother used to tell me when I misbehaved as a child, "The Green Frog" or "Opposite Frog." This was a story about a frog son who always did the exact opposite of what the mother frog instructed.', "Anyways, the background scene is an actual screenshot from the Animal Crossing video game. I modeled the characters and textured them using a Blender extension called PaintSystem. Funny side note, the most complex model is the backpack, which isn't even visible from the render angle. This project was meant to teach us about compositing and rendering in greater depth, and I learned quite a lot about lighting, shadows, focal length, and color temperature. This is highly relevant to my future career skillset as these are essential to knowing how to render designs realistically in context."], software: ["Blender 4.5", "Adobe Photoshop"], cover: "assets/covers/animal-crossing.webp", rows: [[1], [2], [3], [4]], view: { model: "frogs.glb", yaw: 0, pitch: 6, zoom: 1 } }, { slug: "dog-scene", title: "3D Dog Scene", course: "3D Modeling - Project 2", paras: ['The second project of my 3D Modeling class was a follow-along exercise in which the class models a Paw Patrol dog. Some of us decided to get a bit more creative and model an original dog, which Professor Voldman encouraged. I modeled a dachshund, and named him "Beanie" after my own puppy at home. This was the first project in which I abstained from leveraging my prior experience in NURBs based CAD (Onshape/Fusion), which is more of an engineering tool, in favor of mesh based CAD (Blender), which is a tool more commonly used for animation and digital design. The modeling process is completely different, with NURBs based CAD relying on dimensional drawings and mesh based CAD being more akin to sculpting. This project gave me insight into the inner-workings of Blender, with a more detailed foray into the lighting aspect of 3D rendering.'], software: ["Blender 4.5"], cover: "assets/covers/dog-scene.webp", rows: [[1], [2], [3], [4]], view: { model: "dog.glb", yaw: 35, pitch: 8, zoom: 1 } }, { slug: "restaurant-rebrand", title: "Restaurant Rebrand", course: "Design I - Project 3", paras: ['Tasked to rebrand a local business, I chose Society Billiards &amp; Bar because my wife works there as a manager. For the primary logo, I leaned heavily into the billiards theme, creating a crest from two billiards sticks, the eight ball, and the white ball. As the establishment is highly regarded for its craft cocktail menu, I included an outline of a martini and a glass of wine. As the primary logo is quite decorative and elaborate, I also created a more simplistic secondary logo in which I manipulated the typography of the "8" in the eight ball to resemble an "S" for Society. The primary logo was drawn in Procreate, while the secondary logo was designed in Adobe Illustrator.', "For the menu cover, I knew I wanted to lean into the location of Society Billiards, the Flatiron District of Midtown Manhattan. I found a painting of the famed Flatiron building, which I vectorized into a single color line-art style using Adobe Illustrator. The color is meant to be a dull gold for printing in metallic foil. For the menu itself, I used olive branches as dividers and corner accents to emphasize the establishment's reputation as an upscale cocktail bar, continuing the dull gold color theme. All of the typography and menu document layout is done on Adobe InDesign.", "This establishment is also known for hosting various billiards tournaments, thus I modeled and rendered a trophy adorned with the newly minted primary logo. This time, I used Autodesk Fusion as my CAD software to demonstrate platform flexibility.", `Click <a href="https://societybilliards.com/" target="_blank" rel="noopener">HERE</a> to see Society Billiards &amp; Bar's original branding for comparison.`], software: ["Autodesk Fusion", "Blender 4.5", "Procreate", "Adobe Illustrator", "Adobe InDesign", "Adobe Photoshop"], cover: "assets/covers/restaurant-rebrand.webp", rows: [[1], [2, 3], [4], [5], [6, 7]], view: { model: "trophy.glb", yaw: 25, pitch: 12, zoom: 1, explode: true, explodeScale: 0.9, exposure: 1 } }];
+// Array order is the carousel order. The first project is where the carousel starts; the rest
+// alternate to its right and left by how impressive they are, so the weakest sits opposite.
+// `blurb` is the one-line description in the home footer. `rows` lists the gallery images
+// (assets/img/<slug>/NN.webp) row by row.
+export const projects = [
+  {
+    "slug": "museum-exhibition",
+    "title": "Museum Exhibition",
+    "blurb": "A gallery room for vintage Japanese garden art",
+    "course": "DESN 370 Entrepreneurship For Designers",
+    "paras": [
+      "For this project I designed a gallery room for an exhibition of vintage Japanese art. Most of the works feature flowers, trees, gardens and landscapes, and traditional Japanese households took real pride in their gardens, so I built the room around that idea. A wrap-around planter with tall wild grass and bamboo frames the space, and a large live-edge bench gives people a place to sit and take the art in slowly.",
+      "The materials were picked to keep the room warm and calm. Rattan pendant lights give off a soft glow. The display lamps and picture frames are brass, a naturally warm metal that picks up a vintage patina. Wood tones run through the planter and the slatted divider wall, and faux-stone wall tiles nod to a traditional garden.",
+      "Because this was an entrepreneurship class, I also priced it out the way a contractor would: lumber, soil, siding, freight and labor. The labor rates are on the high side on purpose. Crews working around museum pieces carry expensive insurance, and the work would happen overnight while the rest of the museum is open.",
+      "I built the room layout, frames and planter in PTC Onshape, then brought it into Blender to texture, light and render it. The decorative props and some textures came from open-license libraries."
+    ],
+    "software": [
+      "PTC Onshape",
+      "Blender"
+    ],
+    "rows": [
+      [
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ]
+    ],
+    "view": {
+      "model": "museum.glb",
+      "yaw": 40,
+      "pitch": 42,
+      "zoom": 1,
+      "cutaway": true,
+      "ground": false,
+      "exposure": 1.05
+    }
+  },
+  {
+    "slug": "billiards-rebrand",
+    "title": "Billiards Rebrand",
+    "blurb": "Crest, menu and trophy for a Flatiron billiards bar",
+    "course": "Design I - Project 3",
+    "paras": [
+      "Tasked to rebrand a local business, I chose Society Billiards &amp; Bar because my wife works there as a manager. For the primary logo, I leaned heavily into the billiards theme, creating a crest from two billiards sticks, the eight ball, and the white ball. As the establishment is highly regarded for its craft cocktail menu, I included an outline of a martini and a glass of wine. As the primary logo is quite decorative and elaborate, I also created a more simplistic secondary logo in which I manipulated the typography of the \"8\" in the eight ball to resemble an \"S\" for Society. The primary logo was drawn in Procreate, while the secondary logo was designed in Adobe Illustrator.",
+      "For the menu cover, I knew I wanted to lean into the location of Society Billiards, the Flatiron District of Midtown Manhattan. I found a painting of the famed Flatiron building, which I vectorized into a single color line-art style using Adobe Illustrator. The color is meant to be a dull gold for printing in metallic foil. For the menu itself, I used olive branches as dividers and corner accents to emphasize the establishment's reputation as an upscale cocktail bar, continuing the dull gold color theme. All of the typography and menu document layout is done on Adobe InDesign.",
+      "This establishment is also known for hosting various billiards tournaments, thus I modeled and rendered a trophy adorned with the newly minted primary logo. This time, I used Autodesk Fusion as my CAD software to demonstrate platform flexibility.",
+      "Click <a href=\"https://societybilliards.com/\" target=\"_blank\" rel=\"noopener\">HERE</a> to see Society Billiards &amp; Bar's original branding for comparison."
+    ],
+    "software": [
+      "Autodesk Fusion",
+      "Blender 4.5",
+      "Procreate",
+      "Adobe Illustrator",
+      "Adobe InDesign",
+      "Adobe Photoshop"
+    ],
+    "rows": [
+      [
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4
+      ],
+      [
+        5
+      ],
+      [
+        6,
+        7
+      ]
+    ],
+    "view": {
+      "model": "trophy.glb",
+      "yaw": 25,
+      "pitch": 12,
+      "zoom": 1,
+      "explode": true,
+      "explodeScale": 0.9,
+      "exposure": 1
+    }
+  },
+  {
+    "slug": "atoms-for-air",
+    "title": "Atoms for Air",
+    "blurb": "A friendly campaign that makes the case for nuclear",
+    "course": "DESN 345 Design III",
+    "paras": [
+      "The prompt was to reimagine propaganda for an environmental cause. I made Atoms for Air, a public service campaign from a made-up nonprofit of nuclear engineers and climate scientists. It asks people to give nuclear energy a second look, then do one small thing: contact their representative and ask for faster, more predictable licensing for new plants.",
+      "Most of what people believe about nuclear comes from Chernobyl, The Simpsons and disaster movies. The numbers tell a different story. Per unit of electricity, nuclear is about as safe as wind and solar, it has the lowest lifecycle carbon of any source, and all the used fuel the U.S. has ever made would fit on one football field. The campaign takes one fear at a time and answers it with one number and one picture.",
+      "I made it look nothing like nuclear usually looks. No hazard signs, no green glow, no gray towers. It's soft blues, mint and butter yellow, rounded type, and a bluebird named Pip who wears round glasses. Birds are sensitive to air pollution, and the glasses say Pip did the reading. There are three pieces. The billboard has to land in a few seconds from the road. The Instagram carousel carries the details for anyone who swipes. The animated poster ends on a QR code that takes you to a page for finding your representative.",
+      "The uncomfortable part is that this is still propaganda. It uses the same tools as the gas stove influencers: friendly visuals, selective facts and a clear call to action. Everything it says is true, but it doesn't say everything. Making it showed me that the line between educating people and persuading them is mostly about what you leave out."
+    ],
+    "software": [
+      "Figma",
+      "Adobe Photoshop"
+    ],
+    "tileVideo": "assets/tiles/atoms-for-air.mp4",
+    "rows": [
+      [
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        8
+      ]
+    ],
+    "view": {
+      "video": "poster.mp4",
+      "poster": "poster.webp"
+    }
+  },
+  {
+    "slug": "constellation-shelter",
+    "title": "Constellation Shelter",
+    "blurb": "A Flushing bus shelter lit by the Big Dipper",
+    "course": "DESN 345 Design III",
+    "paras": [
+      "We were each assigned a New York City neighborhood and asked to design something that preserves its cultural identity as it changes. I got Flushing. I lived in College Point, right next door, for almost twenty years and never knew that Flushing has been a place of refuge for over 350 years: Quakers in the 1650s, freedom seekers on the Underground Railroad in the 1840s, and immigrants today. If I didn't know, a lot of the people waiting at these bus stops probably don't either.",
+      "So I designed a bus shelter. Freedom seekers navigated north by following the Big Dipper to the North Star, so the roof has the whole Great Bear constellation cut into it, and sunlight through the cutouts lands as stars on the sidewalk where people stand. The shelters would sit at four stops along a \"Flushing Freedom Mile\": Macedonia AME Church, the Bowne House, the Friends Meeting House and the Lewis Latimer House. The outer display is the same at every stop, so the four read as one trail. The inner display tells that stop's story to whoever is waiting on the bus, in the four languages you hear on those corners: English, Chinese, Korean and Spanish.",
+      "I kept the shelter itself clean and modern so it could realistically get past the community boards. The history lives in the details, not the style. I also modeled a real NYC bus stop pole with all of its signage, because a shelter without one looked naked, and any New Yorker would notice."
+    ],
+    "software": [
+      "Pixelmator Pro",
+      "Figma",
+      "PTC Onshape",
+      "Blender"
+    ],
+    "rows": [[1, 2, 3], [5, 6, 7], [8, 9, 10], [4, 11]],
+    "view": {
+      "model": "shelter.glb",
+      "yaw": 32,
+      "pitch": 12,
+      "zoom": 1,
+      "explode": true,
+      "explodeScale": 0.7,
+      "ground": false,
+      "target": [
+        0,
+        -0.08,
+        0
+      ]
+    }
+  },
+  {
+    "slug": "animal-crossing",
+    "title": "3D Animal Crossing Scene",
+    "blurb": "My family as Animal Crossing frogs",
+    "course": "3D Modeling - Project 3",
+    "paras": [
+      "Tasked with creating original characters and compositing those characters into an existing image, my wife insisted that I create a frog family in the style of the video game \"Animal Crossing: New Horizons,\" her favorite Nintendo Switch game. The frog family is supposed to represent our family, which consists of my wife, my puppy, and myself. The frog theme is a running joke derived from a Korean folk story my mother used to tell me when I misbehaved as a child, \"The Green Frog\" or \"Opposite Frog.\" This was a story about a frog son who always did the exact opposite of what the mother frog instructed.",
+      "Anyways, the background scene is an actual screenshot from the Animal Crossing video game. I modeled the characters and textured them using a Blender extension called PaintSystem. Funny side note, the most complex model is the backpack, which isn't even visible from the render angle. This project was meant to teach us about compositing and rendering in greater depth, and I learned quite a lot about lighting, shadows, focal length, and color temperature. This is highly relevant to my future career skillset as these are essential to knowing how to render designs realistically in context."
+    ],
+    "software": [
+      "Blender 4.5",
+      "Adobe Photoshop"
+    ],
+    "rows": [
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ],
+      [
+        4
+      ]
+    ],
+    "view": {
+      "model": "frogs.glb",
+      "yaw": 78,
+      "pitch": 6,
+      "zoom": 1
+    }
+  },
+  {
+    "slug": "probable-cause",
+    "title": "Probable Cause",
+    "blurb": "A 3D-printed bluffing game at the border",
+    "course": "DESN 172 Game Design",
+    "paras": [
+      "Probable Cause is a tabletop game where smugglers try to bluff their way through a border checkpoint in identical box trucks, while one Border Patrol agent tries to figure out who's lying, one door at a time. It plays 3 to 5 people (2 with a variant) in about 20 to 30 minutes.",
+      "Every truck looks and weighs the same, so the agent can't learn anything from the pieces. All they have to go on is how people act: who's rushing, who's stalling, who suddenly won't stop talking. The smugglers load their trucks together while the agent looks away, so they know exactly what everyone else is carrying. That means they can snitch on each other, pretend to, or make a deal and break it two turns later. The title comes from the legal idea that you need a reason to search someone. If the agent opens a clean truck, the driver files a complaint and the agent loses their next search.",
+      "I modeled every part from scratch in PTC Onshape and printed the whole game on my Bambu Lab H2D, about 20 hours over 3 days. The board is three dovetailed pieces, the trucks have working wheels and magnetic rear hatches that hold exactly four boxes, and the agent wears a magnetic badge so you don't have to poke holes in your shirt. The only thing I bought was two spools of filament. I designed the graphics in Illustrator and the 8-page rulebook in Figma, then printed, stitched and trimmed it myself.",
+      "To balance the rules I wrote a Monte Carlo simulation in Python that plays the game 20,000 times per setup with simple bots. My first version had the agent winning over 90% of games, which is how the clean-truck complaint rule was born. After a few rounds of changes every seat lands close to a fair share, so the board stays fair and the table psychology decides who wins. At our first family game night, my wife played the agent and our toy poodle Beanie won 5 to 1. You can't read a poodle."
+    ],
+    "software": [
+      "PTC Onshape",
+      "Bambu Studio",
+      "Adobe Illustrator",
+      "Figma",
+      "Python",
+      "Blender"
+    ],
+    "book": {"label":"Instruction manual","pages":8,"size":[880,1360]},
+    "rows": [[1], [2, 3, 4]],
+    "view": {
+      "model": "probable.glb",
+      "yaw": 150,
+      "pitch": 38,
+      "zoom": 1,
+      "exposure": 0.95
+    }
+  },
+  {
+    "slug": "dog-scene",
+    "title": "3D Dog Scene",
+    "blurb": "A Blender dachshund named after my poodle",
+    "course": "3D Modeling - Project 2",
+    "paras": [
+      "The second project of my 3D Modeling class was a follow-along exercise in which the class models a Paw Patrol dog. Some of us decided to get a bit more creative and model an original dog, which Professor Voldman encouraged. I modeled a dachshund, and named him \"Beanie\" after my own puppy at home. This was the first project in which I abstained from leveraging my prior experience in NURBs based CAD (Onshape/Fusion), which is more of an engineering tool, in favor of mesh based CAD (Blender), which is a tool more commonly used for animation and digital design. The modeling process is completely different, with NURBs based CAD relying on dimensional drawings and mesh based CAD being more akin to sculpting. This project gave me insight into the inner-workings of Blender, with a more detailed foray into the lighting aspect of 3D rendering."
+    ],
+    "software": [
+      "Blender 4.5"
+    ],
+    "rows": [
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ],
+      [
+        4
+      ]
+    ],
+    "view": {
+      "model": "dog.glb",
+      "yaw": 35,
+      "pitch": 8,
+      "zoom": 1
+    }
+  },
+  {
+    "slug": "air-towel",
+    "title": "Air Towel",
+    "blurb": "A handheld dryer that replaces the bath towel",
+    "course": "DESN 370 Entrepreneurship For Designers",
+    "paras": [
+      "The Air Towel is a handheld device that dries you off after a shower with a thin blade of fast-moving air instead of a towel. Bath towels sit damp in a warm bathroom and grow bacteria within days, and rubbing your skin with one is rougher on it than most people think. The Air Towel never touches you, and it cuts down on the towel laundry a household runs every week.",
+      "The class was about taking a product from idea to pitch, so I treated it like a real hardware startup: market sizing, a bill of materials, cost of goods, a stage-gate plan and a technical whitepaper, ending in a pitch deck. The engineering side is where I had the most fun. A single motor can't push enough air through a 1 mm slit, so the design stacks three small high-speed motors in series with stator vanes between them. The blade and vane counts are prime numbers (11 and 13) so it hums instead of whistling. A tapered \"coat-hanger\" plenum spreads the air evenly across the 5-inch nozzle, and the power electronics live in a separate spine along the back, away from the air path.",
+      "I modeled the full assembly in PTC Onshape, including the motors, heater, filter, buttons, screen, magnetic wall mount and the safety plug on the cord, then textured and rendered it in Blender. I also made a cut-in-half version to show how everything fits inside."
+    ],
+    "software": [
+      "PTC Onshape",
+      "Blender",
+      "Pixelmator Pro",
+      "Google Slides"
+    ],
+    "rows": [[1], [2], [3]],
+    "view": {
+      "model": "airtowel.glb",
+      "yaw": 28,
+      "pitch": 8,
+      "zoom": 1,
+      "explode": true,
+      "explodeScale": 1.6,
+      "exposure": 1.05
+    }
+  },
+  {
+    "slug": "kitchen-scene",
+    "title": "3D Kitchen Scene",
+    "blurb": "A kettle, teacup and laptop, modeled from scratch",
+    "course": "3D Modeling - Project 1",
+    "paras": [
+      "Tasked with designing a kettle and two other objects of our choice, I leveraged my prior experience with NURBs based CAD software to model the kettle, a teacup, and a laptop. I then took it a step further and modeled all the background assets as well, creating a detailed kitchen counter complete with cabinets, drawers, tile backsplash, and an outlet. Fun fact, you can actually see me designing this scene on the laptop screen! I took a screenshot of Onshape after I finished the modeling phase and composited the screenshot into the laptop within Blender. This project was by far the most time consuming of any class this semester, but I think it was well worth the effort. I hope you agree!"
+    ],
+    "software": [
+      "PTC Onshape",
+      "Blender 4.5"
+    ],
+    "rows": [[1], [2, 3], [4, 5], [6]],
+    "view": {
+      "model": "kitchen.glb",
+      "yaw": 12,
+      "pitch": 14,
+      "zoom": 1,
+      "ground": false,
+      "target": [
+        0,
+        0.18,
+        0
+      ]
+    }
+  },
+  {
+    "slug": "schrodingers-american",
+    "title": "Schrödinger's American",
+    "blurb": "A case-file booklet on growing up undocumented",
+    "course": "DESN 245 Typography II",
+    "paras": [
+      "The brief asked for a booklet and a poster built around at least three texts with different perspectives on one topic. I chose growing up undocumented in the United States, and instead of collecting other people's writing, I wrote all of it myself: a poem called \"Original Sin,\" a personal essay called \"The Price of Home\" about enlisting in the Army as a 68W combat medic to earn my citizenship, and \"The Sins of Our Fathers,\" a debate-style essay that argues both sides like a courtroom. I didn't think it was right to borrow someone else's words when I had lived it.",
+      "The whole booklet is designed to look and feel like a USCIS case file. When I was younger I couldn't afford a lawyer, so I filled out hundreds of pages of that paperwork myself, and I wanted the design to carry that cold, bureaucratic weight. Article titles are set in Nitti Typewriter for the government-document tone. Body copy is Freight Text, a serif that keeps the heavier arguments grounded. Headers and captions use Interstate, which is based on the lettering on U.S. highway signs, a quiet nod to the road and to crossing borders. Inside, I included my Army service portrait from 2017 in a collage cut-out style inspired by Carin Goldberg's cover for \"Kafka's Last Trial.\"",
+      "The poster, also titled \"Original Sin,\" is a hand drawn illustration of a hand reaching for an apple, after Hugo van der Goes's The Fall of Man.",
+      "I didn't want a generic mockup, so I modeled the booklet cover in PTC Onshape and 3D printed it. Beige PLA gives it the look of a manila folder, black PLA forms the lettering and a cat made of stars and stripes on the front, and neodymium magnets snap it shut. A normal printed hinge would pinch and wear out the spine, so I designed a dual-pivot hinge and sewed the pages directly into it. I then rendered all of the deliverables in Blender."
+    ],
+    "software": [
+      "Adobe InDesign",
+      "Adobe Photoshop",
+      "PTC Onshape",
+      "Blender"
+    ],
+    "book": {"label":"The case-file booklet","pages":16,"size":[1144,1463]},
+    "rows": [[1, 3], [2, 4], [5]],
+    "view": {
+      "model": "schrodinger.glb",
+      "yaw": 0,
+      "pitch": 62,
+      "zoom": 1,
+      "explode": true,
+      "explodeScale": 2.2
+    }
+  }
+];
 
 for (const p of projects) p.tile = `assets/tiles/${p.slug}.webp`;

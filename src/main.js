@@ -4,6 +4,8 @@ import { Carousel } from "./carousel.js";
 import { Viewer } from "./viewer.js";
 import { startWater } from "./water.js";
 import { audio } from "./audio.js";
+import sizes from "./img-sizes.json";
+import { mountBook } from "./flipbook.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -15,8 +17,10 @@ const veil = $("#veil");
 const slider = $("#slider");
 const titleEl = $("#slide-title");
 const countEl = $("#slide-count");
+const blurbEl = $("#slide-blurb");
 
 startWater($("#water"));
+addEventListener("scroll", () => document.body.classList.toggle("scrolled", scrollY > 40), { passive: true });
 
 /* ---------- audio switches (UI sound on, music off by default) ---------- */
 function syncToggles() {
@@ -71,6 +75,7 @@ let lastProject = null;
 function setSlideInfo(i) {
   const p = projects[i];
   titleEl.textContent = p.title;
+  blurbEl.textContent = p.blurb;
   countEl.textContent = `${pad2(i + 1)} / ${pad2(projects.length)}`;
 }
 
@@ -116,8 +121,18 @@ function showProject(slug) {
   document.body.dataset.view = "project";
   lastProject = slug;
   const dir = `assets/img/${slug}/`;
-  const gallery = p.rows.map((row) => `<div class="g-row" style="--n:${row.length}">` +
-    row.map((n) => `<figure><img loading="lazy" decoding="async" src="${dir}${pad2(n)}.webp" alt="${p.title}, image ${n}"></figure>`).join("") + "</div>").join("");
+  // Justified rows: every image in a row shares one height, so widths follow each image's
+  // proportions. A row is never taller than ~84% of the screen or its images' own pixel height.
+  const gallery = p.rows.map((row) => {
+    const dims = row.map((n) => sizes[`${slug}/${pad2(n)}.webp`] || [1600, 1200]);
+    const sum = dims.reduce((t, [w, h]) => t + w / h, 0);
+    const cap = Math.min(...dims.map(([, h]) => h));
+    return `<div class="g-row" style="max-width: calc(min(84svh, ${cap}px) * ${sum.toFixed(4)} + ${row.length - 1}rem)">` +
+      row.map((n, k) => {
+        const [w, h] = dims[k];
+        return `<figure style="flex: ${(w / h).toFixed(4)} 1 0; aspect-ratio: ${w} / ${h}"><img loading="lazy" decoding="async" src="${dir}${pad2(n)}.webp" width="${w}" height="${h}" alt="${p.title}, image ${n}"></figure>`;
+      }).join("") + "</div>";
+  }).join("");
   const tools = v.model ? `
       <div class="v-tools">
         <button class="v-btn" data-act="reset" data-sfx>Reset view</button>
@@ -138,6 +153,7 @@ function showProject(slug) {
           <div class="soft"><p class="label">Software</p><ul>${p.software.map((s) => `<li>${s}</li>`).join("")}</ul></div>
         </aside>
       </div>
+      ${p.book ? `<section class="book-sec"><p class="label">${p.book.label}</p><div class="book-host"></div><p class="book-hint">Click a page or use the arrow keys to turn it</p></section>` : ""}
       <section class="gallery">${gallery}</section>
       <a class="next" href="#/${next.slug}" data-sfx>
         <span class="label">Next project</span>
@@ -149,6 +165,7 @@ function showProject(slug) {
   scrollTo(0, 0);
   requestAnimationFrame(() => page.classList.add("show"));
   page.querySelectorAll(".gallery img").forEach((img) => img.addEventListener("click", () => lightbox(img.src)));
+  if (p.book) mountBook($(".book-host", page), { ...p.book, dir: `assets/book/${slug}/` }, () => audio.play("slide"));
 
   if (!v.model) return;
   const stage = $("#stage");
