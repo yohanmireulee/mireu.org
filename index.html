@@ -2,14 +2,42 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Yohan Mireu Lee</title>
-<link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
-<style>
-  html,body{height:100%;margin:0;background:#0B0D10;color:#E9EEF2}
-  body{display:flex;align-items:center;justify-content:center;font-family:Michroma,sans-serif;letter-spacing:.3em;text-align:center}
-  small{display:block;margin-top:1.5em;color:#9FB8C8;font-size:.6em}
-</style>
+<meta name="description" content="Selected design work by Yohan Mireu Lee: product design, 3D modeling, branding and typography, with interactive 3D models.">
+<meta name="theme-color" content="#0b0c0e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%230b0c0e%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-family=%22Arial%22 font-size=%2212%22 fill=%22%23ecebe6%22 text-anchor=%22middle%22 letter-spacing=%221%22%3EYML%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
 </head>
-<body><div>YOHAN MIREU LEE<small>COMING SOON</small></div></body>
+<body data-view="home">
+<header class="top">
+  <a class="mark" href="#/" data-sfx aria-label="Yohan Mireu Lee, all work">
+    <span class="mark-name">Yohan Mireu Lee</span>
+  </a>
+  <a class="back" href="#/" data-sfx>← All work</a>
+  <div class="toggles">
+    <button id="t-music" class="tog" data-sfx data-short="Music" aria-pressed="false"><i></i>Music</button>
+    <button id="t-ui" class="tog" data-sfx data-short="UI" aria-pressed="false"><i></i>UI Sound</button>
+  </div>
+</header>
+
+<main id="app">
+  <section id="home" hidden>
+    <div id="ring"></div>
+    <div class="ring-info">
+      <p class="eyebrow" id="ring-idx">01 / 10</p>
+      <h2 id="ring-title"></h2>
+      <p id="ring-course"></p>
+    </div>
+    <p class="ring-hint">Drag or scroll to browse · Click a project to open it</p>
+  </section>
+  <section id="page" hidden></section>
+</main>
+<div id="veil"></div>
+<noscript><p style="padding:6rem 2rem;color:#ddd;font-family:sans-serif">This portfolio needs JavaScript to show its 3D models.</p></noscript>
+<script type="module" src="js/app.js"></script>
+</body>
 </html>
