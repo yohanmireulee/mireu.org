@@ -7,6 +7,7 @@ import { audio } from "./audio.js";
 import sizes from "./img-sizes.json";
 import { mountBook } from "./flipbook.js";
 import { showPhilosophy } from "./philosophy.js";
+import { showContact } from "./contact.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -208,7 +209,7 @@ function lightbox(src) {
   audio.play("zoom");
 }
 
-/* ---------- About / Contact (blank for now) ---------- */
+/* ---------- About (blank for now) ---------- */
 function showBlank(name) {
   lastProject = null;
   document.title = `${name} · Yohan Mireu Lee`;
@@ -228,6 +229,15 @@ function showPhilosophyPage() {
   page.hidden = false;
   scrollTo(0, 0);
   disposePage = showPhilosophy(page, { onDone: () => page.classList.add("show") });
+}
+
+function showContactPage() {
+  lastProject = null;
+  document.title = "Contact · Yohan Mireu Lee";
+  document.body.dataset.view = "contact";
+  page.hidden = false;
+  scrollTo(0, 0);
+  disposePage = showContact(page, { onDone: () => page.classList.add("show") });
 }
 
 function clearPage() {
@@ -254,8 +264,10 @@ function route() {
     if (!first && !fromExpand) { veil.classList.add("on"); await wait(320); }
     if (key === "philosophy") {
       hideHome(); clearPage(); showPhilosophyPage(); markCurrent(key);
-    } else if (key === "about" || key === "contact") {
-      hideHome(); clearPage(); showBlank(key === "about" ? "About" : "Contact"); markCurrent(key);
+    } else if (key === "contact") {
+      hideHome(); clearPage(); showContactPage(); markCurrent(key);
+    } else if (key === "about") {
+      hideHome(); clearPage(); showBlank("About"); markCurrent(key);
     } else if (key) {
       hideHome(); clearPage(); showProject(key); markCurrent("");
     } else {
