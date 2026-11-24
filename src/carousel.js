@@ -203,7 +203,7 @@ export class Carousel {
       uPointer: { value: new THREE.Vector2() }, uPointerShift: { value: 0 }, uBlur: { value: 0 }, uBlurZone: { value: 0 },
       uAberration: { value: 0 }, uGrain: { value: C.grain }, uTime: { value: 0 }, uShimmer: { value: 0 },
       uShimmerScale: { value: 1 }, uShimmerSpeed: { value: 0 }, uShimmerZone: { value: 1 },
-      uBackground: { value: new THREE.Color("#16283a") }, uIntro: { value: startExpanded ? 1 : 0 },
+      uBackground: { value: new THREE.Color("#0d1822") }, uIntro: { value: startExpanded ? 1 : 0 },
     });
     for (const k of Object.keys({ ...C.panorama, ...C.scene })) shared["u" + k[0].toUpperCase() + k.slice(1)] = { value: 0 };
 

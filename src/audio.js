@@ -1,20 +1,24 @@
-// Sound: Kenney UI sounds (CC0) and an ambient music bed ("Ambient Cinematic" by Leberch, Pixabay licence).
+// Sound: interface sounds synthesised for this site (tools/make_sounds.py: soft water drops and
+// washes) and an ambient music bed ("Ambient Cinematic" by Leberch, Pixabay licence).
 // UI sound defaults ON, music defaults OFF.
 //
-// Browsers keep audio locked until the visitor clicks, taps or presses a key. Safari in particular
-// only unlocks inside the gesture itself, so every gesture re-checks and resumes the audio context,
-// and the music is started directly from the switch's click.
+// Browsers keep audio locked until the visitor clicks, taps or presses a key, and Safari is the
+// strictest: it only counts some events (click, mouseup, touchend, keydown) and, on iPhone, keeps
+// Web Audio quiet in silent mode unless the page has also played an ordinary <audio> element.
+// So on the first such gesture the page creates its audio context, resumes it, and plays a few
+// milliseconds of silence through an <audio> element, which is exactly what switching the music
+// on used to do by accident.
 
 const SFX = {
-  hover: ["click_002", 0.22],
-  slide: ["tick_004", 0.32],
-  click: ["select_002", 0.55],
-  back: ["back_002", 0.5],
-  menuOpen: ["toggle_001", 0.4],
-  menuClose: ["toggle_004", 0.4],
-  toggle: ["click_005", 0.55],
-  tick: ["click_003", 0.3],
-  zoom: ["glass_005", 0.35],
+  hover: ["ui_hover", 0.16],
+  slide: ["ui_slide", 0.3],
+  click: ["ui_click", 0.55],
+  back: ["ui_back", 0.5],
+  menuOpen: ["ui_menu_open", 0.5],
+  menuClose: ["ui_menu_close", 0.42],
+  toggle: ["ui_toggle", 0.45],
+  tick: ["ui_tick", 0.16],
+  zoom: ["ui_zoom", 0.5],
 };
 const MUSIC_URL = "assets/audio/music.mp3";
 const MUSIC_START = 0.43;   // leading silence in the track
@@ -28,20 +32,30 @@ const store = {
 };
 
 const AC = window.AudioContext || window.webkitAudioContext;
-// Creating the context before any gesture is allowed; it just starts out suspended. Doing it now
-// lets the UI sounds download and decode immediately, so the very first click already has sound.
-const ctx = AC ? new AC() : null;
-const sfxBus = ctx ? ctx.createGain() : null;
-if (ctx) sfxBus.connect(ctx.destination);
+// Download and decode the sounds straight away. Decoding uses an offline context, which needs no
+// gesture; the decoded buffers then play through the live context once a gesture creates it.
 const buffers = {};
-if (ctx) {
-  for (const [name, [file]] of Object.entries(SFX)) {
-    fetch(`assets/audio/${file}.wav`)
-      .then((r) => r.arrayBuffer())
-      .then((b) => new Promise((ok, fail) => ctx.decodeAudioData(b, ok, fail)))
-      .then((buf) => (buffers[name] = buf))
-      .catch((e) => console.warn("sound", file, e));
-  }
+const decoded = {};
+const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+const decoder = OAC ? new OAC(1, 1, 22050) : null;
+for (const [name, [file]] of Object.entries(SFX)) {
+  decoded[name] = fetch(`assets/audio/${file}.wav`)
+    .then((r) => r.arrayBuffer())
+    .then((data) => new Promise((ok, fail) => decoder.decodeAudioData(data, ok, fail)))
+    .then((buf) => (buffers[name] = buf))
+    .catch((e) => console.warn("sound", file, e));
+}
+let ctx = null, sfxBus = null;
+
+// A 0.05 s silent WAV, played once through an <audio> element to unlock Safari's audio.
+const SILENCE = "data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+
+function createContext() {
+  if (ctx || !AC) return;
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
+  ctx = new AC();
+  sfxBus = ctx.createGain();
+  sfxBus.connect(ctx.destination);
 }
 
 let uiOn = store.get("mireu-ui", true);
@@ -49,29 +63,35 @@ let musicOn = false;
 let primed = false;
 
 function wake() {
-  if (!ctx) return;
+  if (!AC) return;
+  createContext();
   if (ctx.state !== "running") ctx.resume().catch(() => {});
   if (!primed) {
-    // iOS needs one buffer started inside a gesture before it lets any sound through.
     primed = true;
+    // iOS also wants one buffer started inside a gesture before it lets sound through
     const s = ctx.createBufferSource();
     s.buffer = ctx.createBuffer(1, 1, 22050);
     s.connect(ctx.destination);
     s.start(0);
+    const el = new Audio(SILENCE);
+    el.play().catch(() => {});
   }
 }
-for (const ev of ["pointerdown", "pointerup", "click", "touchend", "keydown"]) {
+// only events Safari treats as a real gesture can unlock audio
+for (const ev of ["click", "mouseup", "pointerup", "touchend", "keydown"]) {
   addEventListener(ev, wake, { capture: true, passive: true });
 }
 
 export function play(name) {
-  if (!uiOn || !ctx) return;
+  if (!uiOn || !ctx || !primed) return;
   const buf = buffers[name];
-  if (!buf) return;
-  // The very first gesture resumes the context asynchronously; play as soon as it is running.
-  if (ctx.state !== "running") {
-    if (!primed) return; // no click or key press yet: the browser would hold these back
-    ctx.resume().then(() => ctx.state === "running" && start(name, buf)).catch(() => {});
+  // On the very first gesture the sounds are still decoding and the context is still starting;
+  // play as soon as both are ready, unless that takes long enough to feel disconnected.
+  if (!buf || ctx.state !== "running") {
+    const asked = performance.now();
+    Promise.all([decoded[name], ctx.resume()]).then(() => {
+      if (buffers[name] && ctx.state === "running" && performance.now() - asked < 600) start(name, buffers[name]);
+    }).catch(() => {});
     return;
   }
   start(name, buf);
@@ -159,4 +179,4 @@ export const audio = {
   get ui() { return uiOn; },
 };
 // Handy for checking from the browser console: mireuAudio.state
-window.mireuAudio = { get state() { return { context: ctx?.state, loaded: Object.keys(buffers).length, music: musicOn, ui: uiOn, playing: current && !current.paused, volume: current?.volume }; } };
+window.mireuAudio = { get state() { return { context: ctx?.state ?? "not created", loaded: Object.keys(buffers).length, music: musicOn, ui: uiOn, playing: current && !current.paused, volume: current?.volume }; } };

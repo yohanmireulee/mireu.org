@@ -23,7 +23,7 @@ Portfolio site for Yohan Mireu Lee, served by GitHub Pages from the `main` branc
   missing paintings, laptop finish)
 - `assets/models/`: one compressed 3D model per project (.glb)
 - `assets/img/<project>/`: gallery images, numbered in page order
-- `assets/audio/`: Kenney Interface Sounds (CC0) and the music track
+- `assets/audio/`: interface sounds made for the site (`tools/make_sounds.py` regenerates them) and the music track
 
 ## Changing the code
 
