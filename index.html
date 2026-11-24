@@ -5,34 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Yohan Mireu Lee</title>
 <meta name="description" content="Selected design work by Yohan Mireu Lee: product design, 3D modeling, branding and typography, with interactive 3D models.">
-<meta name="theme-color" content="#0b0c0e">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%230b0c0e%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-family=%22Arial%22 font-size=%2212%22 fill=%22%23ecebe6%22 text-anchor=%22middle%22 letter-spacing=%221%22%3EYML%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23000%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-family=%22Arial%22 font-size=%2212%22 fill=%22%23fff%22 text-anchor=%22middle%22 letter-spacing=%221%22%3EYML%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@1..1000&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/site.css">
 </head>
 <body data-view="home">
-<header class="top">
-  <a class="mark" href="#/" data-sfx aria-label="Yohan Mireu Lee, all work">
-    <span class="mark-name">Yohan Mireu Lee</span>
-  </a>
-  <a class="back" href="#/" data-sfx>← All work</a>
-  <div class="toggles">
-    <button id="t-music" class="tog" data-sfx data-short="Music" aria-pressed="false"><i></i>Music</button>
-    <button id="t-ui" class="tog" data-sfx data-short="UI" aria-pressed="false"><i></i>UI Sound</button>
+<canvas id="water" aria-hidden="true"></canvas>
+
+<nav>
+  <div class="container">
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu" data-sfx>
+      <span class="menu-toggle-mask"><span class="menu-toggle-word">Menu</span><span class="menu-toggle-word">Close</span></span>
+    </button>
+    <a class="nav-name" href="#/" data-sfx aria-label="Yohan Mireu Lee, home"><span class="roll"><span class="roll-line">Yohan Mireu Lee</span><span class="roll-line" aria-hidden="true">Yohan Mireu Lee</span></span></a>
+    <div class="audio">
+      <button id="t-music" class="tog" type="button" aria-pressed="false" data-sfx data-short="Music"><i aria-hidden="true"></i><span>Music</span></button>
+      <button id="t-ui" class="tog" type="button" aria-pressed="true" data-sfx data-short="UI"><i aria-hidden="true"></i><span>UI Sound</span></button>
+    </div>
   </div>
-</header>
+</nav>
+
+<div class="menu-panel" id="menu" aria-hidden="true">
+  <ul class="menu-links">
+    <li><a class="menu-link" href="#/" data-sfx><span class="menu-line-mask"><span class="menu-line">Work</span></span></a></li>
+    <li><a class="menu-link" href="#/about" data-sfx><span class="menu-line-mask"><span class="menu-line">About</span></span></a></li>
+    <li><a class="menu-link" href="#/contact" data-sfx><span class="menu-line-mask"><span class="menu-line">Contact</span></span></a></li>
+  </ul>
+</div>
 
 <main id="app">
   <section id="home" hidden>
-    <div id="ring"></div>
-    <div class="ring-info">
-      <p class="eyebrow" id="ring-idx">01 / 10</p>
-      <h2 id="ring-title"></h2>
-      <p id="ring-course"></p>
+    <div class="slider" id="slider" tabindex="0" role="button" aria-label="Open project" aria-describedby="slide-title slide-count"></div>
+    <div class="slide-info">
+      <div class="container">
+        <p id="slide-title" aria-live="polite"></p>
+        <p>Selected Work</p>
+        <p id="slide-count"></p>
+      </div>
     </div>
-    <p class="ring-hint">Drag or scroll to browse · Click a project to open it</p>
   </section>
   <section id="page" hidden></section>
 </main>
