@@ -38,7 +38,7 @@ export function showAbout(page, { onDone } = {}) {
         </div>
         <figure class="ab-photo">
           <div class="ab-print">
-            <img src="assets/img/about/portrait.webp" width="1100" height="1490" alt="Service portrait of Yohan Mireu Lee in U.S. Army uniform in front of an American flag">
+            <img src="assets/img/about/portrait-pv2.webp" width="1100" height="1490" alt="Service portrait of Yohan Mireu Lee in U.S. Army uniform in front of an American flag">
             <span class="ab-sheen" aria-hidden="true"></span>
             <span class="ab-scan" aria-hidden="true"></span>
           </div>

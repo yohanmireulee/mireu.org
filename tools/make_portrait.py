@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageFilter
 
-OUT = Path(__file__).resolve().parent.parent / "assets/img/about/portrait.webp"
+OUT = Path(__file__).resolve().parent.parent / "assets/img/about/portrait-pv2.webp"
 card = Image.open(sys.argv[1]).convert("RGB").crop((150, 196, 1925, 2600))
 
 L = np.asarray(card.convert("L")).astype(np.float32) / 255
