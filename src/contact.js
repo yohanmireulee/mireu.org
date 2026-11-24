@@ -9,7 +9,7 @@ import { audio } from "./audio.js";
 // Web3Forms access key: create one at web3forms.com with the address that should receive the
 // messages, then paste it here. Web3Forms keys are designed to sit in public page code; the key
 // only lets people send to that inbox and never reveals the address.
-const FORM_KEY = "";
+const FORM_KEY = "1a2af8ca-807d-4de0-86ae-87740597516c";
 
 const CODE = [35, 124, 6, 72, 52, 83, 3, 64, 40, 118, 27, 69, 63, 118, 64, 74, 53, 126];
 const MIX = [0x5a, 0x13, 0x6e, 0x29];

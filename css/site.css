@@ -66,8 +66,7 @@ nav.is-menu-open .menu-toggle-word + .menu-toggle-word { transform: translateY(0
 }
 .nav-name { justify-self: center; display: inline-flex; align-items: center; gap: 0.95rem; }
 /* the YML monogram + rule + wordmark lockup */
-.nav-mark { width: auto; height: 1.55rem; flex: none; fill: none; stroke: #BBDAEC; stroke-width: 11; stroke-linejoin: miter; overflow: visible; transition: transform 0.6s var(--ease-out); }
-.nav-name:hover .nav-mark { transform: translateY(-1px); }
+.nav-mark { width: auto; height: 1.55rem; flex: none; fill: none; stroke: #BBDAEC; stroke-width: 11; stroke-linejoin: miter; overflow: visible; }
 .nav-rule { width: 1px; height: 1.35rem; background: rgb(255 255 255 / 0.2); flex: none; }
 .nav-word { font-family: "Jost", var(--font, sans-serif); font-weight: 300; font-size: 0.74rem; letter-spacing: 0.24em; color: #E9EEF2; margin-right: -0.24em; }
 .nav-word .mid { color: #9FB8C8; }
