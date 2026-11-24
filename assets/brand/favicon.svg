@@ -1,10 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0B0D10"/>
-  <svg x="11" y="12" width="42" height="38.8" viewBox="0 0 236 218" fill="none" stroke="#BBDAEC" stroke-width="15" stroke-linejoin="miter" stroke-miterlimit="10">
-    <clipPath id="c"><rect width="236" height="218"/></clipPath>
-    <g clip-path="url(#c)">
-      <path d="M7.5 172 V4 L85.5 95.4 L166.75 4 V164 H236"/>
-      <path d="M85.5 95.4 V218"/>
-    </g>
-  </svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -13 244 244">
+  <style>
+    path { stroke: #2F5670; }
+    @media (prefers-color-scheme: dark) { path { stroke: #BBDAEC; } }
+  </style>
+  <clipPath id="c"><rect width="236" height="218"/></clipPath>
+  <g clip-path="url(#c)" fill="none" stroke-width="24" stroke-linejoin="miter" stroke-miterlimit="10">
+    <path d="M12 172 V4 L85.5 95.4 L159 4 V160 H236"/>
+    <path d="M85.5 95.4 V218"/>
+  </g>
 </svg>

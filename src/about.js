@@ -42,7 +42,6 @@ export function showAbout(page, { onDone } = {}) {
             <span class="ab-sheen" aria-hidden="true"></span>
             <span class="ab-scan" aria-hidden="true"></span>
           </div>
-          <figcaption>Service portrait · U.S. Army</figcaption>
         </figure>
       </header>
 
