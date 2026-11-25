@@ -10,9 +10,8 @@ const EDUCATION = [
 ];
 const SOFTWARE = ["PTC Onshape", "Autodesk Fusion", "Blender", "Figma", "Adobe Photoshop", "Adobe Illustrator", "Adobe InDesign"];
 const SKILLS = [
-  "Web design", "UI/UX design", "3D design", "Consumer electronics prototyping",
-  "Boutique biomedical laboratory equipment design", "FDM 3D printing", "Biomedical engineering",
-  "Microbiology laboratory technician",
+  "Web design", "UI/UX design", "3D product design", "FDM 3D printing", "Consumer electronics R&D",
+  "Laboratory equipment engineering", "Microbiology laboratory experience",
 ];
 
 const pad2 = (n) => String(n).padStart(2, "0");

@@ -1,6 +1,8 @@
 // Sound: interface sounds synthesised for this site (tools/make_sounds.py: soft water drops and
 // washes) and an ambient music bed ("Ambient Cinematic" by Leberch, Pixabay licence).
-// UI sound defaults ON, music defaults OFF.
+// UI sound and music both default ON; a visitor who switches either off is remembered.
+// Browsers only allow sound after the first click, tap or key press, so the music starts
+// then (or straight away, where the browser already allows this site to play sound).
 //
 // Browsers keep audio locked until the visitor clicks, taps or presses a key, and Safari is the
 // strictest: it only counts some events (click, mouseup, touchend, keydown) and, on iPhone, keeps
@@ -59,7 +61,7 @@ function createContext() {
 }
 
 let uiOn = store.get("mireu-ui", true);
-let musicOn = false;
+let musicOn = store.get("mireu-music", true);
 let primed = false;
 
 function wake() {
@@ -68,6 +70,7 @@ function wake() {
   if (ctx.state !== "running") ctx.resume().catch(() => {});
   if (!primed) {
     primed = true;
+    if (musicOn) startMusic();
     // iOS also wants one buffer started inside a gesture before it lets sound through
     const s = ctx.createBufferSource();
     s.buffer = ctx.createBuffer(1, 1, 22050);
@@ -148,13 +151,18 @@ function onTime(e) {
 }
 for (const p of players) p.addEventListener("timeupdate", onTime);
 
+function startMusic() {
+  if (!current) current = players[0];
+  if (current.paused) startPlayer(current);
+  else fade(current, MUSIC_LEVEL, 1.5);
+}
+
 export function setMusic(on) {
   musicOn = on;
+  store.set("mireu-music", on);
   if (on) {
     wake();
-    if (!current) current = players[0];
-    if (current.paused) startPlayer(current);
-    else fade(current, MUSIC_LEVEL, 1.5);
+    startMusic();
   } else {
     for (const p of players) fade(p, 0, 1.2, () => p.pause());
   }
@@ -172,6 +180,16 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) current.pause();
   else current.play().catch(() => {});
 });
+
+// Try to start the music on arrival; browsers that need a click first refuse quietly, and the
+// first click then starts it (see wake).
+if (musicOn) {
+  const p = players[0];
+  p.preload = "auto";
+  try { p.currentTime = MUSIC_START; } catch {}
+  p.volume = 0;
+  p.play().then(() => { if (!musicOn) { p.pause(); return; } current = p; fade(p, MUSIC_LEVEL, CROSSFADE); }).catch(() => {});
+}
 
 export const audio = {
   play, setMusic, setUi,
