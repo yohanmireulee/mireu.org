@@ -1,5 +1,5 @@
 // About page. Where the Design Philosophy page is driven by scroll position, this one is driven
-// by touch and arrival: the service portrait develops like a print in a darkroom and tilts under
+// by touch and arrival: the photo develops like a print in a darkroom and tilts under
 // the pointer like a photograph held to the light; each section assembles once as it enters the
 // screen (degree letters ink in and the GPAs count up), the software circles on a slow orbit,
 // and the skills rise line by line.
@@ -13,6 +13,8 @@ const SKILLS = [
   "Web design", "UI/UX design", "3D product design", "FDM 3D printing", "Consumer electronics R&D",
   "Laboratory equipment engineering", "Microbiology laboratory experience",
 ];
+
+import { lightbox } from "./lightbox.js";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const rise = (text, delay, cls = "") =>
@@ -30,14 +32,19 @@ export function showAbout(page, { onDone } = {}) {
             ${rise("Lee", 0.51)}
           </h1>
           <ul class="ab-facts">
-            <li style="--d:1.2s"><span class="ab-star" aria-hidden="true"></span>U.S. Army Veteran</li>
+            <li style="--d:1.2s" class="ab-vet">
+              <button class="ab-thumb" type="button" aria-label="View service portrait" data-sfx>
+                <img src="assets/img/about/portrait-pv2.webp" alt="" width="1100" height="1490" loading="lazy">
+              </button>
+              U.S. Army Veteran
+            </li>
             <li style="--d:1.35s">BFA, Design · Queens College, CUNY</li>
             <li style="--d:1.5s">AS, Math &amp; Science · LaGuardia Community College, CUNY</li>
           </ul>
         </div>
         <figure class="ab-photo">
           <div class="ab-print">
-            <img src="assets/img/about/portrait-pv2.webp" width="1100" height="1490" alt="Service portrait of Yohan Mireu Lee in U.S. Army uniform in front of an American flag">
+            <img src="assets/img/about/together.webp" width="1000" height="1250" alt="Yohan Mireu Lee smiling beside his wife">
             <span class="ab-sheen" aria-hidden="true"></span>
             <span class="ab-scan" aria-hidden="true"></span>
           </div>
@@ -130,6 +137,9 @@ export function showAbout(page, { onDone } = {}) {
   }, { threshold: 0.2 });
   page.querySelectorAll("[data-reveal]").forEach((s) => io.observe(s));
   cleanups.push(() => io.disconnect());
+
+  page.querySelector(".ab-thumb").addEventListener("click", () =>
+    lightbox("assets/img/about/portrait-pv2.webp", "Service portrait of Yohan Mireu Lee in U.S. Army uniform in front of an American flag"));
 
   const img = page.querySelector(".ab-print img");
   const develop = () => requestAnimationFrame(() => print.classList.add("developed"));

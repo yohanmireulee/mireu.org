@@ -9,6 +9,7 @@ import { mountBook } from "./flipbook.js";
 import { showPhilosophy } from "./philosophy.js";
 import { showContact } from "./contact.js";
 import { showAbout } from "./about.js";
+import { lightbox } from "./lightbox.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -197,18 +198,6 @@ function showProject(slug) {
   }
 }
 
-function lightbox(src) {
-  const el = document.createElement("div");
-  el.className = "lightbox";
-  el.innerHTML = `<img src="${src}" alt=""><button aria-label="Close">×</button>`;
-  document.body.appendChild(el);
-  requestAnimationFrame(() => el.classList.add("show"));
-  const close = () => { el.classList.remove("show"); setTimeout(() => el.remove(), 300); removeEventListener("keydown", key); };
-  const key = (e) => { if (e.key === "Escape") close(); };
-  el.addEventListener("click", close);
-  addEventListener("keydown", key);
-  audio.play("zoom");
-}
 
 let disposePage = null;
 
