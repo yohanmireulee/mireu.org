@@ -9,7 +9,8 @@ FY, BY = -D / 2, D / 2
 ZM0, ZM1 = 720, 790           # mullion between freezer and fridge
 T = 55                         # wall thickness (foam)
 
-mat('Stainless', (0.66, 0.66, 0.66), metal=1, rough=0.28)
+mat('Stainless', (0.70, 0.705, 0.71), metal=1, rough=0.33)
+mat('Brushed edge', (0.55, 0.555, 0.56), metal=1, rough=0.45)
 mat('Painted steel', (0.18, 0.18, 0.19), metal=0.5, rough=0.45)
 mat('Foam', (0.93, 0.74, 0.22), rough=0.95)
 mat('Liner', (0.93, 0.93, 0.91), rough=0.4)
@@ -178,11 +179,17 @@ def french_door(side):
     p.add(box(30, 50, 60, 6), 'Black plastic', xf((cx + sx * (dw / 2 - 40), FY - 20, dz1 + 10)))     # top hinge
     if side == 'L':                                                                    # through-the-door dispenser
         p.add(slab(220, 330, 16, 18), 'Black plastic', xf((cx + 40, FY - 72, cz + 40), Y90))
+        p.add(box(60, 30, 26, 8), 'Grey plastic', xf((cx + 40, FY - 82, cz + 112)))          # ice chute
+        p.add(cyl(5, 18, 12), 'Grey plastic', xf((cx + 70, FY - 82, cz + 104)))              # water nozzle
+        for i in range(7):
+            p.add(box(150, 3, 3), 'Grey plastic', xf((cx + 40, FY - 86 + i * 2, cz - 112)))  # drip tray grille
+        p.add(box(160, 24, 8, 3), 'Black plastic', xf((cx + 40, FY - 76, cz - 116)))
         p.add(slab(180, 220, 20, 12), 'Display', xf((cx + 40, FY - 66, cz - 10), Y90))
         p.add(box(120, 6, 40, 4), 'Display', xf((cx + 40, FY - 80, cz + 160)))
         for i in range(5):
             p.add(box(14, 2, 8), 'Display glow', xf((cx - 6 + i * 22, FY - 84, cz + 160)))
         p.add(box(80, 26, 70, 6), 'Grey plastic', xf((cx + 40, FY - 60, cz + 60)))       # paddle
+    p.add(box(dw - 40, 6, 6, 2), 'Brushed edge', xf((cx, FY - 70, dz1 - 6)))           # top edge cap
     return p
 
 french_door('L')
@@ -270,5 +277,16 @@ for sx in (-1, 1):
     ft.add(cyl(24, 20, 24), 'Black plastic', xf((sx * (W / 2 - 50), BY - 60, 24), (0, 90, 0)))
     ft.add(box(40, 60, 30, 3), 'Steel', xf((sx * (W / 2 - 50), BY - 60, 44)))
 ft.add(box(W - 40, 40, 30, 3), 'Steel', xf((0, FY + 50, 30)))
+
+# ------------------------------------------------------------- finishing details
+grille = Part('Front toe grille', (0, -900, -360))
+grille.add(box(W - 40, 10, 50, 4), 'Black plastic', xf((0, FY - 8, 22)))
+for i in range(36):
+    grille.add(box(14, 4, 30, 1), 'Painted steel', xf((-W / 2 + 40 + i * 23.5, FY - 14, 22)))
+fd.add(box(W - 60, 8, 6, 2), 'Brushed edge', xf((0, FY - 69, FZ1 - 8)))
+for sx in (-1, 1):
+    top.add(box(120, 60, 18, 6), 'Painted steel', xf((sx * (W / 2 - 70), FY + 40, H + 9)))   # hinge covers
+for z in (500, 900, 1300):
+    lin.add(box(2 * IX - 40, 10, 4, 2), 'Grey plastic', xf((0, IB - 6, z)))
 
 export('/home/claude/dbd/build/raw/fridge.glb')

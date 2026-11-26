@@ -15,13 +15,13 @@ export function createStage(canvas, opts = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance', preserveDrawingBuffer: !!opts.preserve });
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.15;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.9;
+  scene.environmentIntensity = 1.0;
   const key = new THREE.DirectionalLight(0xffffff, 1.4);
   key.position.set(3, 5, 4);
   scene.add(key);
@@ -63,7 +63,7 @@ export function createStage(canvas, opts = {}) {
 
   function size() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     outlineMat.uniforms.res.value.set(w, h);
@@ -218,13 +218,13 @@ export function createStage(canvas, opts = {}) {
   canvas.addEventListener('pointercancel', end);
 
   // ---------------------------------------------------------------- loop
-  let last = performance.now(), focusMix = 0;
+  let last = performance.now(), focusMix = 0, lastOp = '';
   const tmpC = new THREE.Vector3();
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     if (state.obj) {
-      state.explode = damp(state.explode, state.explodeTarget, 6, dt);
+      state.explode = damp(state.explode, state.explodeTarget, 10, dt);
       const ex = state.explode * state.view.ex;
       state.parts.forEach((p) => p.node.position.copy(p.home).addScaledVector(p.dir, ex));
 
@@ -234,7 +234,7 @@ export function createStage(canvas, opts = {}) {
       const any = state.selected.size > 0;
       state.sel = damp(state.sel, any ? 1 : 0, 7, dt);
       state.parts.forEach((p) => {
-        const target = !any || state.selected.has(p.name) ? 1 : 0.07;
+        const target = !any || state.selected.has(p.name) ? 1 : 0.06;
         const g = damp(p.ghost, target, 8, dt);
         if (Math.abs(g - p.ghost) > 1e-4 || (g !== 1 && p.ghost === 1)) { p.ghost = g; setGhost(p, g); }
       });
@@ -261,7 +261,8 @@ export function createStage(canvas, opts = {}) {
       key.position.copy(camera.position).add(new THREE.Vector3(dist * 0.6, dist, 0));
     }
     state.visible = damp(state.visible, state.visibleTarget, 5, dt);
-    canvas.style.opacity = state.visible.toFixed(3);
+    const op = state.visible.toFixed(2);
+    if (op !== lastOp) { canvas.style.opacity = op; lastOp = op; }
     if (state.visible > 0.01) renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }

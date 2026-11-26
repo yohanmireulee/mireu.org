@@ -42,7 +42,7 @@ export const ITEMS = [
     model: 'models/iphone.glb',
     view: { pitch: 0.5, spin: 0.14, ex: 1.0, yaw: -0.5 },
     lede: `The iPhone is the most repaired consumer object on earth and one of the most carefully defended. Apple has made real progress: a back that comes off without a laser, a repair manual anyone can download. It has also made sure that a genuine part, moved from one iPhone to another, can announce itself as a stranger.`,
-    facts: [['Parts modeled', '24'], ['Internal screws', '12 screws, 5 lengths'], ['Battery service', '$129, out of warranty']],
+    facts: [['Parts', '23'], ['Internal screws', '12 screws, 5 lengths'], ['Battery service', '$129, out of warranty']],
     stations: [
       {
         parts: ['Pentalobe screws'],
@@ -81,7 +81,7 @@ export const ITEMS = [
         bill: `It also turns board repair into microsurgery, separating layers with heat without cooking the chips between them. Storage is soldered on, so a phone bought with too little stays that way. Chips like these are where most of an iPhone's manufacturing carbon goes, and that is the footprint that grows every time a phone is replaced instead of fixed.`,
       },
       {
-        parts: ['Back glass', 'MagSafe coil and magnets'],
+        parts: ['Back glass and camera plateau', 'MagSafe coil and magnets'],
         title: 'Credit, and a catch',
         alibi: `For years the back glass was bonded so firmly that shops took it off with lasers. Since the iPhone 14 and 15 generations, the inside has been redesigned so the back comes away on its own.`,
         bill: `That's a real improvement and it deserves saying plainly. The catch is the coil behind it. Wireless charging loses part of its energy as heat, and heat is the thing batteries hate most. A convenience that quietly ages the one part guaranteed to wear out is a strange gift.`,
@@ -107,7 +107,7 @@ export const ITEMS = [
     model: 'models/macbook.glb',
     view: { pitch: 0.42, spin: 0.12, ex: 1.0, yaw: -0.7 },
     lede: `The MacBook Air is a brilliant computer with a short list of things you're allowed to change, and the list is empty. Memory, storage and processor are chosen once, at checkout, for the life of the machine. When the storage wears out, the computer does.`,
-    facts: [['Parts modeled', '21'], ['Upgradeable after purchase', 'None'], ['Battery service', 'up to $199']],
+    facts: [['Parts', '21'], ['Upgradeable after purchase', 'None'], ['Battery service', 'up to $199']],
     stations: [
       {
         parts: ['Pentalobe screws'],
@@ -166,7 +166,7 @@ export const ITEMS = [
     model: 'models/washer.glb',
     view: { pitch: 0.3, spin: 0.12, ex: 1.0, yaw: -0.6 },
     lede: `A washing machine is a motor, a drum, a pump and a block of concrete. The motor in this one will likely outlive everything it's bolted to. The bearings will not, and on many modern front-loaders the bearings live inside a tub that was welded shut at the factory.`,
-    facts: [['Parts modeled', '27'], ['Tub halves', '2, welded into 1'], ['Bearing and seal kit', 'under $70']],
+    facts: [['Parts', '29'], ['Tub halves', '2, welded into 1'], ['Bearing and seal kit', 'under $70']],
     stations: [
       {
         parts: ['Door bellow'],
@@ -225,7 +225,7 @@ export const ITEMS = [
     model: 'models/fridge.glb',
     view: { pitch: 0.24, spin: 0.12, ex: 1.0, yaw: -0.6 },
     lede: `A refrigerator is the only appliance in the house that never gets a day off. This one is an LG French-door model with a linear compressor, a design LG sells on efficiency, quiet and twenty-year durability. Owners have taken that last claim to court more than once.`,
-    facts: [['Parts modeled', '24'], ['Sealed-system repair', '$600 to $1,400'], ['2020 settlement class', 'about 1.5 million owners']],
+    facts: [['Parts', '25'], ['Sealed-system repair', '$600 to $1,400'], ['2020 settlement class', 'about 1.5 million owners']],
     stations: [
       {
         parts: ['Polyurethane foam'],
@@ -284,7 +284,7 @@ export const ITEMS = [
     model: 'models/model_y.glb',
     view: { pitch: 0.34, spin: 0.08, ex: 1.0, yaw: -0.8 },
     lede: `The Model Y is one of the best-selling cars in the world and a masterclass in building things quickly. Its body hangs from two giant castings and, in the structural-pack version modeled here, a battery that doubles as the floor. Nearly every choice that makes it cheaper to build makes it harder to fix, and the bill lands on insurers first and on everyone's premiums after.`,
-    facts: [['Parts modeled', '39'], ['Cells in this model', '864'], ['Parts one rear casting replaced', 'about 70']],
+    facts: [['Parts', '35'], ['Cells in this model', '864'], ['Parts one rear casting replaced', 'about 70']],
     stations: [
       {
         parts: ['Front megacasting', 'Rear megacasting'],

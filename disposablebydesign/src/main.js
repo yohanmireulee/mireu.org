@@ -1,4 +1,6 @@
+import Lenis from 'lenis';
 import { createStage } from './stage.js';
+import { startWater } from './water.js';
 import { ESSAY, THESIS, ITEMS, WORKS_CITED } from './content.js';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -15,7 +17,11 @@ const words = (t) => md(t).split(/(<em>.*?<\/em>)/).map((chunk) => {
 }).join('');
 const money = (n) => '$' + n.toLocaleString('en-US');
 
+startWater($('#water'));
 const stage = createStage($('#stage'));
+const lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9, smoothWheel: true });
+(function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })(performance.now());
+const toTop = () => lenis.scrollTo(0, { immediate: true, force: true });
 const view = $('#view');
 const veil = $('#veil');
 const mobile = () => innerWidth < 820;
@@ -35,7 +41,7 @@ function buildDock() {
     const a = e.target.closest('a[data-route]');
     if (!a) return;
     e.preventDefault();
-    if (location.hash === '#' + a.dataset.route) { scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (location.hash === '#' + a.dataset.route) { lenis.scrollTo(0, { duration: 1.4 }); return; }
     a.classList.remove('pop'); void a.offsetWidth; a.classList.add('pop');
     go(a.dataset.route);
   });
@@ -53,7 +59,7 @@ async function go(route) {
   await new Promise((r) => setTimeout(r, 520));
   location.hash = '#' + route;
   await render(route);
-  scrollTo(0, 0);
+  toTop();
   veil.classList.remove('in'); veil.classList.add('out');
   setTimeout(() => { veil.classList.remove('out'); busy = false; }, 620);
 }
@@ -69,7 +75,7 @@ async function render(route) {
   document.title = item ? `${item.name} · Disposable by Design` : 'Disposable by Design';
 }
 
-addEventListener('hashchange', () => { if (!busy) render(routeOf()).then(() => scrollTo(0, 0)); });
+addEventListener('hashchange', () => { if (!busy) render(routeOf()).then(toTop); });
 
 // ------------------------------------------------------------------ scroll plumbing
 function onScroll(fn) {
@@ -148,11 +154,11 @@ async function essayPage() {
   await stage.show('models/iphone.glb', { pitch: 0.55, spin: 0.16, ex: 1.25, yaw: 0.6 });
   stage.explode = 0.9; stage.jump();
   stage.select([]);
-  stage.zoom = 1.45;
+  stage.zoom = 1.65;
   const paras = collect(view);
   const stop = onScroll(() => {
     const vh = innerHeight;
-    stage.offset = mobile() ? [0, 0.2] : [0.26, 0.03];
+    stage.offset = mobile() ? [0, 0.2] : [0.3, 0.03];
     stage.visible = 1 - clamp(scrollY / (vh * 0.9));
     brighten(paras);
   });
@@ -160,23 +166,32 @@ async function essayPage() {
 }
 
 // ------------------------------------------------------------------ an object
+// Everything on this page is scrubbed by scroll: the explode amount, the cards (which fade and drift
+// with their own section's progress rather than switching on and off), the part counter and the rail.
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+
 async function itemPage(item) {
   const idx = ITEMS.indexOf(item);
   const next = ITEMS[(idx + 1) % ITEMS.length];
   const n = item.stations.length;
   const max = Math.max(...item.economics.bars.map((b) => b[1]));
+  const total = +(item.facts.find((f) => f[0] === 'Parts') || [0, 0])[1];
   view.innerHTML = `
     <article class="item">
       <section class="i-intro">
-        <p class="eyebrow">Object ${pad(idx + 1)} of ${pad(ITEMS.length)} · ${item.kicker}</p>
-        <h1 class="i-title">${item.name}</h1>
-        <p class="i-dek">${item.dek}</p>
-        <p class="i-lede">${md(item.lede)}</p>
-        <dl class="facts">${item.facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+        <div class="i-intro-in">
+          <p class="eyebrow">Object ${pad(idx + 1)} of ${pad(ITEMS.length)} · ${item.kicker}</p>
+          <h1 class="i-title">${item.name}</h1>
+          <p class="i-dek">${item.dek}</p>
+          <p class="i-lede">${md(item.lede)}</p>
+          <dl class="facts">${item.facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
+        </div>
         <p class="scroll-cue" aria-hidden="true"><span></span>Scroll to take it apart</p>
       </section>
 
-      <section class="i-gap" data-k="apart"><p class="gap-cap"><em>Coming apart.</em></p></section>
+      <section class="i-gap" data-k="apart">
+        <div class="gap-cap"><p class="gc-count"><span class="gc-n">0</span><span class="gc-of">/ ${total}</span></p><p class="gc-t"><em>parts coming loose</em></p></div>
+      </section>
 
       ${item.stations.map((s, i) => `
         <section class="i-station" data-i="${i}">
@@ -190,7 +205,7 @@ async function itemPage(item) {
           </div>
         </section>`).join('')}
 
-      <section class="i-gap" data-k="together"><p class="gap-cap"><em>And back together,</em> as if nothing happened.</p></section>
+      <section class="i-gap" data-k="together"><div class="gap-cap"><p class="gc-t"><em>And back together,</em> as if nothing happened.</p></div></section>
 
       <section class="i-econ">
         <p class="eyebrow">${item.name}</p>
@@ -210,39 +225,79 @@ async function itemPage(item) {
         </a>
       </section>
       <footer class="foot"><a href="#/" data-route="/" class="back">← The essay</a><span>Disposable by Design · Yohan Mireu Lee</span></footer>
-    </article>`;
+    </article>
+    <aside class="rail" aria-hidden="true">
+      <span class="rail-line"><i></i></span>
+      ${item.stations.map((s, i) => `<span class="rail-tick" data-i="${i}">${pad(i + 1)}</span>`).join('')}
+    </aside>`;
   view.querySelectorAll('a[data-route]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); go(a.dataset.route); }));
 
   stage.explode = 0; stage.jump();
   stage.visible = 1;
   await stage.show(item.model, item.view);
+  const intro = $('.i-intro', view), introIn = $('.i-intro-in', view), cue = $('.scroll-cue', view);
   const apart = $('[data-k="apart"]', view), together = $('[data-k="together"]', view);
+  const count = $('.gc-n', view), capA = $('[data-k="apart"] .gap-cap', view), capT = $('[data-k="together"] .gap-cap', view);
   const stations = [...view.querySelectorAll('.i-station')];
+  const cards = stations.map((s) => $('.card', s));
+  const ticks = [...document.querySelectorAll('.rail-tick')];
+  const railFill = $('.rail-line i');
+  const rail = $('.rail');
   const econ = $('.i-econ', view);
   let active = -2;
-  const prog = (el) => { const r = el.getBoundingClientRect(); return clamp((innerHeight * 0.55 - r.top) / r.height); };
+  // progress of a section: 0 when its top reaches the bottom of the screen, 1 when its bottom leaves the top
+  const span = (el) => { const r = el.getBoundingClientRect(), vh = innerHeight; return { r, p: clamp((vh - r.top) / (r.height + vh)) }; };
 
   const stop = onScroll(() => {
-    const vh = innerHeight, mid = vh * 0.5;
-    stage.offset = mobile() ? [0, scrollY < vh * 0.6 ? 0.24 : 0.2] : [0.2, 0];
-    stage.zoom = mobile() ? (scrollY < vh * 0.6 ? 1.15 : 0.9) : 1;
-    const pa = prog(apart), pt = prog(together);
-    let e = ease(pa);
-    if (pt > 0) e = 1 - ease(pt);
+    const vh = innerHeight, mob = mobile();
+    stage.offset = mob ? [0, scrollY < vh * 0.5 ? 0.24 : 0.2] : [0.2, 0];
+    stage.zoom = mob ? (scrollY < vh * 0.5 ? 1.15 : 0.9) : 1;
+
+    // the intro drifts up and fades as the object starts to separate, so there is never a dead stretch
+    const ir = intro.getBoundingClientRect();
+    const ip = clamp(-ir.top / ir.height);
+    introIn.style.opacity = (1 - smooth(0.25, 0.85, ip)).toFixed(3);
+    introIn.style.transform = `translate3d(0, ${(-ip * 60).toFixed(1)}px, 0)`;
+    cue.style.opacity = (1 - smooth(0, 0.15, ip)).toFixed(3);
+
+    // explode: starts while the intro is still leaving and finishes as the first card arrives
+    const a = apart.getBoundingClientRect();
+    let e = smooth(0, 1, clamp((-(ir.top) - ir.height * 0.35) / ((a.bottom - ir.top) - ir.height * 0.35 - vh * 0.65)));
+    const t = together.getBoundingClientRect();
+    const tp = clamp((vh * 0.75 - t.top) / (t.height));
+    if (tp > 0) e = 1 - smooth(0, 1, tp);
     stage.explode = e;
-    let a = -1;
-    const line = mobile() ? vh * 0.85 : mid;
-    stations.forEach((s, i) => { const r = s.getBoundingClientRect(); if (r.top < line && r.bottom > line) a = i; });
-    if (a !== active) {
-      active = a;
-      stage.select(a >= 0 ? item.stations[a].parts : []);
-      stations.forEach((s, i) => s.classList.toggle('on', i === a));
+    count.textContent = Math.round(e * total);
+    const ap = clamp((vh - a.top) / (a.height + vh));
+    capA.style.opacity = (smooth(0.12, 0.32, ap) * (1 - smooth(0.5, 0.64, ap))).toFixed(3);
+    capT.style.opacity = (smooth(0.2, 0.45, tp + 0.2) * (1 - smooth(0.8, 1, tp))).toFixed(3);
+
+    // cards: each one is scrubbed by its own section
+    let cur = -1;
+    stations.forEach((s, i) => {
+      const r = s.getBoundingClientRect();
+      const p = clamp((vh - r.top) / (r.height + vh));          // 0 → 1 across the section's whole pass
+      const vin = smooth(0.24, 0.42, p), vout = 1 - smooth(0.72, 0.88, p);
+      const o = vin * vout;
+      cards[i].style.opacity = o.toFixed(3);
+      cards[i].style.transform = `translate3d(0, ${((1 - vin) * 40 - (1 - vout) * 40).toFixed(1)}px, 0)`;
+      if (p > 0.3 && p < 0.8) cur = i;
+    });
+    if (cur !== active) {
+      active = cur;
+      stage.select(cur >= 0 ? item.stations[cur].parts : []);
+      ticks.forEach((tk, i) => tk.classList.toggle('on', i === cur));
     }
+    // the rail fills with overall progress through the stations
+    const first = stations[0].getBoundingClientRect(), last = stations[n - 1].getBoundingClientRect();
+    const rp = clamp((vh * 0.5 - first.top) / (last.bottom - first.top));
+    railFill.style.transform = `scaleY(${rp.toFixed(4)})`;
+    rail.style.opacity = (smooth(0, 0.03, rp) * (1 - smooth(0.97, 1, rp))).toFixed(3);
+
     const er = econ.getBoundingClientRect();
-    econ.classList.toggle('shown', er.top < vh * 0.75);
-    stage.visible = 1;
+    econ.classList.toggle('shown', er.top < vh * 0.8);
   });
-  return { dispose: () => { stop(); stage.select([]); } };
+  return { dispose: () => { stop(); stage.select([]); document.querySelector('.rail')?.remove(); } };
 }
 
 // ------------------------------------------------------------------ start

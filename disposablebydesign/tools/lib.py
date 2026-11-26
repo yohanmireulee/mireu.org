@@ -261,7 +261,8 @@ PARTS = []
 
 
 class Part:
-    def __init__(self, name, explode=(0, 0, 0), smooth=30, order=None):
+    def __init__(self, name, explode=(0, 0, 0), smooth=30, order=None, recalc=True):
+        self.recalc = recalc
         self.name = name
         self.bm = bmesh.new()
         self.mats = []
@@ -287,7 +288,8 @@ class Part:
     def build(self, scale=0.001):
         me = bpy.data.meshes.new(self.name)
         bmesh.ops.scale(self.bm, vec=(scale, scale, scale), verts=self.bm.verts)
-        bmesh.ops.recalc_face_normals(self.bm, faces=self.bm.faces)
+        if self.recalc:
+            bmesh.ops.recalc_face_normals(self.bm, faces=self.bm.faces)
         self.bm.to_mesh(me)
         self.bm.free()
         for m in self.mats:
@@ -412,4 +414,69 @@ def apply_mods(bm, mods):
         m2 = c.data
         bpy.data.objects.remove(c)
         bpy.data.meshes.remove(m2)
+    return out
+
+
+# ---------------------------------------------------------------- importing supplied models
+
+def open_source(path):
+    if path.endswith('.blend'):
+        bpy.ops.wm.open_mainfile(filepath=path)
+    else:
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        bpy.ops.import_scene.gltf(filepath=path)
+    bpy.context.view_layer.update()
+
+
+def grab(obj, M=None, ratio=1.0, weld=0.0):
+    """Copy an object's evaluated mesh (world space, optionally decimated) into a free bmesh, then apply M."""
+    ob = bpy.data.objects[obj] if isinstance(obj, str) else obj
+    mods = []
+    if weld > 0:
+        w = ob.modifiers.new('_w', 'WELD'); w.merge_threshold = weld; mods.append(w)
+    if ratio < 1.0:
+        d = ob.modifiers.new('_d', 'DECIMATE'); d.ratio = ratio; d.use_collapse_triangulate = True; mods.append(d)
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = ob.evaluated_get(dg)
+    me = ev.to_mesh()
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    ev.to_mesh_clear()
+    for m in mods:
+        ob.modifiers.remove(m)
+    bmesh.ops.transform(bm, matrix=ob.matrix_world, verts=bm.verts)
+    if M is not None:
+        bmesh.ops.transform(bm, matrix=M, verts=bm.verts)
+    return bm
+
+
+def tris(bm):
+    return sum(len(f.verts) - 2 for f in bm.faces)
+
+
+def islands(bm):
+    """Split a bmesh into connected pieces; returns list of vertex-index sets."""
+    bm.verts.ensure_lookup_table()
+    seen = set(); out = []
+    for v in bm.verts:
+        if v.index in seen:
+            continue
+        stack = [v]; seen.add(v.index); comp = []
+        while stack:
+            x = stack.pop(); comp.append(x.index)
+            for e in x.link_edges:
+                y = e.other_vert(x)
+                if y.index not in seen:
+                    seen.add(y.index); stack.append(y)
+        out.append(comp)
+    return out
+
+
+def subset(bm, keep_fn):
+    """New bmesh containing only faces for which keep_fn(face) is true."""
+    out = bm.copy()
+    kill = [f for f in out.faces if not keep_fn(f)]
+    bmesh.ops.delete(out, geom=kill, context='FACES')
+    loose = [v for v in out.verts if not v.link_faces]
+    bmesh.ops.delete(out, geom=loose, context='VERTS')
     return out

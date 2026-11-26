@@ -8,7 +8,7 @@ W, D, H = 686, 760, 990          # cabinet, mm. Front faces -Y.
 CZ = 500                         # drum axis height
 FY = -D / 2                      # front face
 
-mat('Enamel', (0.90, 0.90, 0.88), rough=0.35, coat=0.4)
+mat('Enamel', (0.88, 0.885, 0.875), rough=0.3, coat=0.6)
 mat('Galvanised steel', (0.62, 0.63, 0.64), metal=1, rough=0.45)
 mat('Console', (0.06, 0.065, 0.07), rough=0.3, coat=0.6)
 mat('Display', (0.01, 0.012, 0.015), rough=0.1)
@@ -173,7 +173,7 @@ for k in range(3):
     r = math.radians(a)
     spi.add(box(46, 22, 215, 6), 'Cast aluminium', xf((135 * math.cos(r), DB + 16, CZ + 135 * math.sin(r)), (0, -(a - 90), 0)))
     spi.add(cyl(12, 26, 16), 'Cast aluminium', xf((250 * math.cos(r), DB + 6, CZ + 250 * math.sin(r)), Y90))
-spi.add(cyl(19, 150, 24), 'Steel', xf((0, DB + 110, CZ), Y90))
+spi.add(cyl(19, 110, 24), 'Steel', xf((0, DB + 78, CZ), Y90))
 
 brg = Part('Bearings and seal', (0, 480, 0))
 for yy, ro in ((DB + 52, 42), (DB + 92, 36)):
@@ -206,8 +206,8 @@ for k in range(12):
     a = TAU * k / 12
     rot.add(box(100, 8, 12), 'Steel', xf((85 * math.cos(a), RY + 8, CZ + 85 * math.sin(a)), (0, -math.degrees(a), 0)))
     rot.add(box(16, 6, 30), 'Steel', xf((70 * math.cos(a + 0.26), RY + 2, CZ + 70 * math.sin(a + 0.26)), (0, -math.degrees(a), 0)))
-rot.add(cyl(30, 30, 24), 'Steel', xf((0, RY + 14, CZ), Y90))
-rot.add(cyl(8, 12, 12), 'Chrome', xf((0, RY + 32, CZ), Y90))
+rot.add(cyl(30, 18, 24), 'Steel', xf((0, RY + 8, CZ), Y90))
+rot.add(cyl(9, 4, 16), 'Chrome', xf((0, RY + 16, CZ), Y90))
 
 # ------------------------------------------------------------- suspension
 spr = Part('Suspension springs', (0, 0, 520))
@@ -273,5 +273,45 @@ for x in (-W / 2 + 50, W / 2 - 50):
     for y in (-D / 2 + 60, D / 2 - 60):
         feet.add(cyl(8, 40, 12), 'Steel', xf((x, y, 10)))
         feet.add(cyl(24, 12, 24, bevel=3), 'Black rubber', xf((x, y, -6)))
+
+# ------------------------------------------------------------- finishing details
+# console: printed cycle names as fine tick lines around the knob, a status ring and a door-lock icon
+for k in range(10):
+    a = math.radians(200 - k * 22)
+    con.add(box(14, 1, 2), 'Display glow' if k == 3 else 'Dark chrome', xf((60 + 66 * math.cos(a), FY + 4, H - 78 + 44 * math.sin(a)), (0, -math.degrees(a), 0)))
+con.add(torus(40, 1.2, 48, 6), 'Display glow', xf((60, FY + 3.5, H - 78), Y90))
+con.add(box(10, 1, 10, 2), 'Dark chrome', xf((300, FY + 3.5, H - 56)))
+con.add(box(W - 30, 2, 2), 'Dark chrome', xf((0, FY + 4, H - 20)))                  # console top trim line
+# front panel: a pressed shoulder line and rounded vertical edges
+fp.add(box(W - 30, 3, 3, 1), 'Enamel', xf((0, FY - 1, 168)))
+for sx in (-1, 1):
+    fp.add(cyl(6, H - 240, 12), 'Enamel', xf((sx * (W / 2 - 6), FY + 6, (H - 230) / 2 + 110)))
+# door: inner gasket lip, hinge plate, a finger recess on the handle
+door.add(torus(206, 4, 96, 8), 'Black rubber', xf((0, FY + 2, CZ), Y90))
+door.add(box(16, 8, 210, 4), 'Black plastic', xf((-270, FY - 4, CZ)))
+door.add(box(24, 6, 60, 6), 'Black plastic', xf((262, FY - 66, CZ)))
+# drawer: compartment labels as tiny raised marks
+for i, x in enumerate((-280, -230, -170)):
+    dr.add(box(18, 1, 6, 1), 'White plastic', xf((x, FY - 10, H - 46)))
+# rear: power cord with plug, hose ports labelled hot/cold, vent slots, transport bolts
+cord = [(60, D / 2 + 10, 760), (90, D / 2 + 60, 700), (140, D / 2 + 90, 520), (170, D / 2 + 110, 300), (200, D / 2 + 140, 160)]
+rp.add(pipe(cord, 4, 8), 'Black plastic')
+rp.add(box(30, 26, 40, 6), 'Black plastic', xf((200, D / 2 + 150, 130)))
+rp.add(cyl(16, 6, 16), 'Blue plastic', xf((-200, D / 2 + 8, 820), Y90))
+rp.add(cyl(16, 6, 16), 'Black rubber', xf((200, D / 2 + 8, 820), Y90))
+for i in range(8):
+    rp.add(box(40, 2, 6, 1), 'Black plastic', xf((-210 + i * 60, D / 2 + 1, 930)))
+for x, z in ((-250, 300), (250, 300), (-250, 700), (250, 700)):
+    rp.add(cyl(10, 8, 16), 'Steel', xf((x, D / 2 + 4, z), Y90))
+# inside: the pressure switch that tells the board how full the tub is, with its hose
+psw = Part('Pressure switch', (220, -120, 620))
+psw.add(cyl(26, 22, 24, bevel=3), 'White plastic', xf((220, 160, H - 110)))
+psw.add(box(20, 14, 12, 3), 'Black plastic', xf((220, 186, H - 110)))
+psw.add(pipe([(220, 160, H - 122), (240, 120, 600), (200, 40, 220), (60, -40, CZ - 318)], 3, 8), 'Hose')
+# wiring harness from the board down to the motor, pump and lock
+harn = Part('Wiring harness', (-120, 120, 300))
+harn.add(pipe([(-90, FY + 200, H - 110), (-300, -100, H - 130), (-310, 150, 700), (-280, D / 2 - 70, 420), (-120, SY + 30, CZ + 90)], 6, 8), 'Black plastic')
+harn.add(pipe([(-300, -100, H - 130), (-310, -250, 600), (262, FY + 60, CZ - 40)], 4, 8), 'Black plastic')
+harn.add(pipe([(-310, 150, 700), (-300, 50, 250), (PX - 70, PY + 40, PZ + 40)], 4, 8), 'Black plastic')
 
 export('/home/claude/dbd/build/raw/washer.glb')
