@@ -10,18 +10,19 @@
 // - Canvas Setup: 1280x720, degree mode, center image mode, generate background stars
 
 // 2. MAIN DRAW LOOP
-// - Environment: Stars, dashed orbit rings, and Earth (shared across all states)
+// - Camera: Follows the ship around a 2200x2200 map (the screen only shows a 1280x720 window of it)
+// - Environment: Stars, dashed orbit rings, map edge, and Earth (shared across all states)
 // - State Machine Routing:
 //   - State 0: Title screen
 //   - State 1: Active gameplay (ship, laser, engine push, orbits, collisions, power ups, win/lose checks)
 //   - State 2: Paused
 //   - State 3: Contract complete (level won)
 //   - State 4: Mission failed
-// - HUD: Cash, target, level, hull, laser battery, and radio messages drawn on top of the world
+// - HUD: Cash, target, level, hull, laser battery, minimap, and radio messages drawn on top of the world
 
 // 3. DRAW COMPONENTS
-// - Environment: Twinkling stars, orbit rings, Earth
-// - HUD: Cash panel, level badge, hull/laser panel, radio bubble
+// - Environment: Camera, twinkling stars, orbit rings, map edge, Earth
+// - HUD: Cash panel, level badge, minimap, hull/laser panel, radio bubble
 // - Menus: Pause overlay, results panel, buttons
 // - Helpers: Letter spaced text, outlined text, money formatting
 
@@ -97,25 +98,29 @@ let warnedKessler = false;
 let warnedBurnUp = false;
 
 // Layout Variables
-let earthX = 640; // Earth center X
-let earthY = 360; // Earth center Y
+let worldSize = 2200; // The map is a 2200x2200 square and the camera follows the ship around it (the screen only shows a 1280x720 window of it)
+let earthX = 1100; // Earth center X (middle of the map)
+let earthY = 1100; // Earth center Y
 let earthR = 120; // Earth radius, not counting the atmosphere glow
-let issOrbit = 330; // The ISS always flies the outermost orbit, so anything pushed off screen has to cross it
-let orbitRings = [190, 260, 330]; // Dashed guide rings
+let issOrbit = 820; // The ISS always flies the outermost orbit, so anything pushed off the map has to cross it
+let orbitRings = [320, 570, 820]; // Dashed guide rings
+let camX = 1100; // Camera center X in map coordinates
+let camY = 1100; // Camera center Y in map coordinates
 
 // Tuning Variables (all the numbers from the GDD values table live here so balancing is just editing numbers)
-let gravity = 269; // Gravity strength (GM). Higher = faster orbits and harder pull back toward Earth
+let gravity = 740; // Gravity strength (GM). Higher = faster orbits and harder pull back toward Earth
 let startCash = 500; // Every level starts at $500
 let hullMax = 5; // Hull segments
 let batteryMax = 1200; // 20 seconds of laser at 60fps
 let satDamageCost = 250; // First hit on a working satellite
 let satDestroyCost = 500; // Extra cost when it's destroyed (250 + 500 = 750 total, matches the GDD)
 let turnSpeed = 3.5; // Degrees per frame for A and D
-let thrustPower = 0.06; // Acceleration per frame while holding W
-let maxSpeed = 4.5; // Speed cap for the ship
+let thrustPower = 0.08; // Acceleration per frame while holding W
+let maxSpeed = 6; // Speed cap for the ship
 let flameLength = 58; // How far the engine flame reaches, which is also the push range
-let pushForce = 0.12; // How hard the flame shoves things (divided by the object's mass)
+let pushForce = 0.16; // How hard the flame shoves things (divided by the object's mass)
 let maxObjects = 120; // Cap so a chain reaction can't melt the browser
+let laserRange = 750; // How far the beam reaches (about the edge of the screen, so you can't hit stuff you can't see)
 let orbitDecay = 0.9993; // Velocity kept per frame for loose objects (1 = no drag, lower = junk falls into the atmosphere faster)
 let issLaserGrace = 30; // Laser grace window on the ISS, about half a second (0 = instant fail, but sweeping across it for one frame felt unfair)
 
@@ -237,17 +242,22 @@ function draw() { // Main game loop that runs 60 times a second
     updateGame(); // Moves everything, fires the laser, checks collisions, checks win/lose
   } // End gameplay update
 
-  // 1. WORLD (gets shaken, HUD does not)
+  // 1. CAMERA
+  if (gameState === 1) updateCamera(); // Follows the ship (frozen when paused or on results)
+  drawStars(); // Twinkling stars (screen space, they scroll slower than everything else so it feels deep)
+
+  // 2. WORLD (gets shaken, HUD does not)
   push(); // World container
+  translate(width / 2 - camX, height / 2 - camY); // Moves the whole map so the camera point is in the middle of the screen
   if (shakeTimer > 0) { // If something just crashed
     translate(random(-4, 4), random(-4, 4)); // Jitters the whole world a few pixels
     if (gameState === 1) shakeTimer--; // Counts down (frozen when paused or on results)
   } // End shake
-  drawStars(); // Twinkling stars
+  drawMapEdge(); // Dashed line around the edge of the map
   drawOrbitRings(); // Dashed guide rings
   image(imgEarth, earthX, earthY, imgEarth.width / 2, imgEarth.height / 2); // Earth (exported at 2x for retina screens)
 
-  for (let o of objects) o.show(); // Draws everything in orbit
+  for (let o of objects) if (onScreen(o.pos.x, o.pos.y, 120)) o.show(); // Draws everything in orbit that's actually in view
   drawLaser(); // Laser beam goes under the ship but over the objects
   if (!shipExploded) ship.show(); // Ship disappears if it blew up
 
@@ -257,10 +267,10 @@ function draw() { // Main game loop that runs 60 times a second
   for (let f of floatingTexts) f.show(); // Cash popups
   pop(); // End world container
 
-  // 2. HUD
+  // 3. HUD
   drawHUD(); // Cash, level, hull, battery, radio
 
-  // 3. OVERLAYS
+  // 4. OVERLAYS
   if (gameState === 2) drawPauseOverlay(); // Paused
   if (gameState === 3) drawResultsPanel(true); // Contract complete
   if (gameState === 4) drawResultsPanel(false); // Mission failed
@@ -295,7 +305,7 @@ function updateGame() { // Everything that happens in one frame of gameplay
       let d = dist(o.pos.x, o.pos.y, earthX, earthY); // Distance to Earth center
       if (d < earthR + o.r * 0.3) { // Hit the atmosphere
         burnUp(o); // Burns up on reentry
-      } else if (o.pos.x < -80 || o.pos.x > width + 80 || o.pos.y < -80 || o.pos.y > height + 80) { // Way off screen
+      } else if (o.pos.x < -80 || o.pos.x > worldSize + 80 || o.pos.y < -80 || o.pos.y > worldSize + 80) { // Past the edge of the map
         leftOrbit(o); // Gone for good
       } // End removal checks
     } // End loose object checks
@@ -355,26 +365,50 @@ function updateGame() { // Everything that happens in one frame of gameplay
 // ******************************************
 // --- SUBSECTION: ENVIRONMENT ---
 // ******************************************
+function updateCamera() { // Camera eases toward the ship and looks a little ahead of where it's going
+  let targetX = ship.pos.x + ship.vel.x * 25; // Leads in the direction of travel so you can see what's coming
+  let targetY = ship.pos.y + ship.vel.y * 25;
+  camX = lerp(camX, constrain(targetX, width / 2, worldSize - width / 2), 0.08); // Smooth follow, stops at the map edge
+  camY = lerp(camY, constrain(targetY, height / 2, worldSize - height / 2), 0.08);
+} // End camera function
+
+function onScreen(x, y, margin) { // Checks if a map point is inside the camera view (plus a margin)
+  return abs(x - camX) < width / 2 + margin && abs(y - camY) < height / 2 + margin; // Inside the view box
+} // End on screen function
+
+function drawMapEdge() { // Faint dashed border so you can see where orbit ends
+  push(); // Edge container
+  noFill(); // Hollow
+  stroke(228, 87, 46, 90); // Faint orange red
+  strokeWeight(3); // Thin
+  drawingContext.setLineDash([12, 16]); // Dashed
+  rect(0, 0, worldSize, worldSize); // Map border
+  drawingContext.setLineDash([]); // Resets the dash
+  pop(); // End edge container
+} // End map edge function
+
 function drawStars() { // Twinkling background stars
   push(); // Stars container
   noStroke(); // No outlines
   for (let s of stars) { // Loops through every star
     let size = s.baseSize + sin(frameCount * s.speed + s.offset) * 0.8; // Sine wave pulse
+    let sx = ((s.x - camX * 0.25) % width + width) % width; // Scrolls at a quarter of the camera speed and wraps around the screen
+    let sy = ((s.y - camY * 0.25) % height + height) % height;
     fill(255, 255, 255, s.sparkle ? 230 : 150); // Sparkles are brighter
     if (s.sparkle) { // 4 point sparkle
       let r = size * 3; // Sparkle arm length
       beginShape(); // Sparkle shape
-      vertex(s.x, s.y - r); // Top point
-      vertex(s.x + r * 0.25, s.y - r * 0.25); // Inner corner
-      vertex(s.x + r, s.y); // Right point
-      vertex(s.x + r * 0.25, s.y + r * 0.25); // Inner corner
-      vertex(s.x, s.y + r); // Bottom point
-      vertex(s.x - r * 0.25, s.y + r * 0.25); // Inner corner
-      vertex(s.x - r, s.y); // Left point
-      vertex(s.x - r * 0.25, s.y - r * 0.25); // Inner corner
+      vertex(sx, sy - r); // Top point
+      vertex(sx + r * 0.25, sy - r * 0.25); // Inner corner
+      vertex(sx + r, sy); // Right point
+      vertex(sx + r * 0.25, sy + r * 0.25); // Inner corner
+      vertex(sx, sy + r); // Bottom point
+      vertex(sx - r * 0.25, sy + r * 0.25); // Inner corner
+      vertex(sx - r, sy); // Left point
+      vertex(sx - r * 0.25, sy - r * 0.25); // Inner corner
       endShape(CLOSE); // Closes the sparkle
     } else { // Normal dot star
-      circle(s.x, s.y, max(0.5, size)); // Minimum 0.5 so they never fully disappear
+      circle(sx, sy, max(0.5, size)); // Minimum 0.5 so they never fully disappear
     } // End star type
   } // End star loop
   pop(); // End stars container
@@ -478,11 +512,55 @@ function drawHUD() { // Everything that sits on top of the game
   fill(lowBlink ? color(255, 110, 90) : color(61, 225, 255)); // Cyan, or red when blinking
   if (charge > 0) rect(132, 662, max(20, 250 * charge), 20, 10); // Battery fill
 
+  // Minimap (top right, under the level badge)
+  drawMinimap(); // Whole map shrunk down so you can find stuff off screen
+
   // Radio message (bottom right)
   if (radioTimer > 0) drawRadio(); // Only when someone is talking
 
   pop(); // End HUD container
 } // End draw HUD function
+
+function drawMinimap() { // Shows the whole map, since the screen only shows part of it
+  let size = 160; // Minimap is 160x160
+  let mx = 1096; // Left edge
+  let my = 96; // Top edge
+  let k = (size - 16) / worldSize; // Map pixels to minimap pixels
+  hudPanel(mx, my, size, size); // Panel background
+  push(); // Minimap container
+  translate(mx + 8, my + 8); // Moves to the inside of the panel
+
+  noFill(); // Orbit and view outlines
+  stroke(38, 48, 92); // Same navy as the orbit rings
+  strokeWeight(1); // Thin
+  circle(earthX * k, earthY * k, issOrbit * 2 * k); // ISS orbit
+  stroke(175, 185, 215, 120); // Light gray blue
+  rect((camX - width / 2) * k, (camY - height / 2) * k, width * k, height * k); // What the screen is showing right now
+
+  noStroke(); // Dots have no outline
+  fill(47, 111, 208); // Earth blue
+  circle(earthX * k, earthY * k, earthR * 2 * k); // Earth
+
+  for (let o of objects) { // One dot per object
+    if (o.dead) continue; // Skips removed objects
+    let g = o.info.group; // Shorthand
+    if (o.threat && frameCount % 20 < 10) fill(255, 77, 77); // Blinking red if it's heading for the ISS
+    else if (g === 'iss') fill(232, 179, 58); // ISS gold
+    else if (g === 'satellite') fill(61, 225, 255); // Satellites cyan
+    else if (g === 'powerup') fill(91, 227, 125); // Power ups green
+    else fill(160, 168, 186); // Debris gray
+    let d = g === 'iss' ? 7 : g === 'debris' ? constrain(o.r * 0.12, 2, 5) : 4; // Bigger debris = bigger dot
+    circle(o.pos.x * k, o.pos.y * k, d); // Dot
+  } // End object loop
+
+  fill(255); // White ship marker
+  push(); // Ship marker container
+  translate(ship.pos.x * k, ship.pos.y * k); // Moves to the ship
+  rotate(ship.heading); // Points the same way as the ship
+  triangle(0, -5, -3.5, 4, 3.5, 4); // Little arrow
+  pop(); // End ship marker container
+  pop(); // End minimap container
+} // End minimap function
 
 function hudPanel(x, y, w, h) { // Dark rounded panel with the teal border
   fill(19, 26, 56); // Panel fill
@@ -720,7 +798,7 @@ function radio(who, msg) { // Shows a message in the bottom right bubble
 // ******************************************
 class Spaceship { // The player
   constructor() { // Initializes ship properties
-    this.pos = createVector(140, 360); // Starts on the left side, outside every orbit and clear of the HUD panels
+    this.pos = createVector(earthX - 960, earthY); // Starts on the left side of the map, outside every orbit
     this.vel = createVector(0, 0); // Not moving
     this.heading = 90; // Degrees, 0 = nose pointing up, so 90 points right at Earth
     this.hull = hullMax; // Full hull
@@ -764,11 +842,11 @@ class Spaceship { // The player
 
     this.pos.add(this.vel); // No friction in space, so no brakes. Rotate 180 and burn to slow down.
 
-    // Screen edges act like walls so you can't fly off and get lost
+    // Map edges act like walls so you can't fly off and get lost
     if (this.pos.x < 20) { this.pos.x = 20; this.vel.x *= -0.5; } // Left wall
-    if (this.pos.x > width - 20) { this.pos.x = width - 20; this.vel.x *= -0.5; } // Right wall
+    if (this.pos.x > worldSize - 20) { this.pos.x = worldSize - 20; this.vel.x *= -0.5; } // Right wall
     if (this.pos.y < 20) { this.pos.y = 20; this.vel.y *= -0.5; } // Top wall
-    if (this.pos.y > height - 20) { this.pos.y = height - 20; this.vel.y *= -0.5; } // Bottom wall
+    if (this.pos.y > worldSize - 20) { this.pos.y = worldSize - 20; this.vel.y *= -0.5; } // Bottom wall
 
     // Earth is solid
     let toShip = createVector(this.pos.x - earthX, this.pos.y - earthY); // Earth to ship
@@ -1089,7 +1167,7 @@ function goToMenu() { // Back to the title screen
 function fireLaser() { // Shoots a straight line out of the nose and finds the first thing it touches
   let nose = ship.nosePos(); // Beam start
   let dir = ship.forward(); // Beam direction
-  let best = 1600; // Longest the beam can be (past the edge of the screen)
+  let best = laserRange; // Longest the beam can be
   let hitObject = null; // What the beam hits
 
   for (let o of objects) { // Checks every object
@@ -1324,7 +1402,7 @@ function leftOrbit(o) { // Loose object flew off the screen
   else { // Debris
     o.dead = true; // Flags for removal
     debrisCleared++; // Counts as cleared
-    addCash(o.info.value, constrain(o.pos.x, 60, width - 60), constrain(o.pos.y, 60, height - 60)); // Popup at the screen edge so you can actually see it
+    addCash(o.info.value, constrain(o.pos.x, camX - width / 2 + 60, camX + width / 2 - 60), constrain(o.pos.y, camY - height / 2 + 60, camY + height / 2 - 60)); // Popup pinned inside the screen so you can actually see it
   } // End group check
 } // End left orbit function
 
@@ -1338,7 +1416,7 @@ function damageSatellite(s) { // First hit on a working satellite
 function loseSatellite(s) { // Satellite is gone (burned up or flew away)
   if (!s.damaged) damageSatellite(s); // Charges the damage cost first if it wasn't already damaged
   s.dead = true; // Flags for removal
-  addCash(-satDestroyCost, constrain(s.pos.x, 60, width - 60), constrain(s.pos.y, 60, height - 60)); // Costs the rest
+  addCash(-satDestroyCost, constrain(s.pos.x, camX - width / 2 + 60, camX + width / 2 - 60), constrain(s.pos.y, camY - height / 2 + 60, camY + height / 2 - 60)); // Costs the rest
   radio('mc', "We just lost a satellite. That's coming out of your pay."); // Scolding
 } // End lose satellite function
 
@@ -1384,22 +1462,22 @@ function collectPowerUp(p) { // Ship grabbed a power up
 
 function spawnOnOrbit(type) { // Puts a new object on a random orbit without overlapping anything
   let info = types[type]; // Type info
-  let minR = earthR + 20 + info.r; // Closest orbit allowed (bigger stuff has to orbit higher so it doesn't overlap Earth)
-  let maxR = issOrbit - types.iss.r - info.r - 40; // Farthest orbit allowed (stays well inside the ISS orbit, so one bump doesn't send it straight into the station)
+  let minR = earthR + 60 + info.r; // Closest orbit allowed (bigger stuff has to orbit higher so it doesn't overlap Earth)
+  let maxR = issOrbit - types.iss.r - info.r - 80; // Farthest orbit allowed (stays well inside the ISS orbit, so one bump doesn't send it straight into the station)
   for (let attempts = 0; attempts < 200; attempts++) { // Safety counter so it can't loop forever
-    let r = random(minR, maxR); // Random orbit radius
+    let r = sqrt(random(minR * minR, maxR * maxR)); // Random orbit radius (square root trick so the outer orbits don't end up emptier than the inner ones)
     let a = random(360); // Random spot around Earth
     let x = earthX + cos(a) * r; // Where that is
     let y = earthY + sin(a) * r;
     let overlap = objects.some(o => dist(x, y, o.pos.x, o.pos.y) < info.r + o.r + 10); // Too close to something
-    let nearShip = dist(x, y, ship.pos.x, ship.pos.y) < 120; // Too close to the player
+    let nearShip = dist(x, y, ship.pos.x, ship.pos.y) < 250; // Too close to the player
     if (!overlap && !nearShip) { // Spot is clear
       let o = new SpaceObject(type, r, a); // Makes the object
       objects.push(o); // Adds it
       return o; // Done
     } // End clear check
   } // End attempts loop
-  let o = new SpaceObject(type, random(minR, maxR), random(360)); // Orbit is too crowded for a clean spot, so it just goes anywhere (on later levels that's kind of the point)
+  let o = new SpaceObject(type, sqrt(random(minR * minR, maxR * maxR)), random(360)); // Orbit is too crowded for a clean spot, so it just goes anywhere (on later levels that's kind of the point)
   objects.push(o); // Adds it
   return o; // Done
 } // End spawn on orbit function
@@ -1426,6 +1504,8 @@ function startLevel(n) { // Loads a level from the levels array
   floatingTexts = [];
 
   ship = new Spaceship(); // Fresh ship
+  camX = constrain(ship.pos.x + 300, width / 2, worldSize - width / 2); // Snaps the camera to the ship (a little toward Earth)
+  camY = constrain(ship.pos.y, height / 2, worldSize - height / 2);
   cash = startCash; // $500
   target = L.target; // Cash target
   debrisCleared = 0; // Resets stats
@@ -1435,7 +1515,7 @@ function startLevel(n) { // Loads a level from the levels array
   shakeTimer = 0;
   powerUpTimer = 1200; // First extra power up after 20 seconds
 
-  iss = new SpaceObject('iss', issOrbit, random(360)); // The ISS is always there
+  iss = new SpaceObject('iss', issOrbit, random(-120, 120)); // The ISS is always there (starts on the far side of Earth from the ship so you don't spawn on top of it)
   iss.hp = issLaserGrace; // Laser grace window
   objects.push(iss); // Adds it first so everything else spawns around it
 
