@@ -118,7 +118,9 @@ wf.add(cyl(31, 30, 24), 'Blue line', xf((360, FY + 110, H - 6 - T - 95), (0, 90,
 fd = Part('Freezer drawer', (0, -1100, -120))
 FZ0, FZ1 = 40, ZM0 + 10
 fd.add(slab(W - 6, FZ1 - FZ0, 62, 18, bevel=4), 'Stainless', xf((0, FY - 36, (FZ0 + FZ1) / 2), Y90))
-fd.add(pipe([(-320, FY - 70, FZ1 - 70), (-320, FY - 110, FZ1 - 70), (320, FY - 110, FZ1 - 70), (320, FY - 70, FZ1 - 70)], 11, 14), 'Stainless')
+fd.add(cyl(11, 680, 40, bevel=3), 'Stainless', xf((0, FY - 110, FZ1 - 70), (0, 90, 0)))
+for dx in (-320, 320):
+    fd.add(cyl(8, 40, 24), 'Stainless', xf((dx, FY - 90, FZ1 - 70), Y90))
 fd.add(frame(W - 40, FZ1 - FZ0 - 40, 12, 18, 22), 'Gasket', xf((0, FY - 2, (FZ0 + FZ1) / 2), Y90))
 fd.add(box(W - 60, 6, FZ1 - FZ0 - 60, 6), 'Liner', xf((0, FY - 6, (FZ0 + FZ1) / 2)))
 BZ0 = 270
@@ -163,11 +165,20 @@ def french_door(side):
     dw, dz0, dz1 = W / 2 - 3, ZM0 + 30, H
     cx, cz = sx * (W / 4 + 1.5), (dz0 + dz1) / 2
     dh = dz1 - dz0
-    p.add(slab(dw, dh, 64, 18, bevel=5), 'Stainless', xf((cx, FY - 38, cz), Y90))
+    door_bm = slab(dw, dh, 64, 18, bevel=5)
+    bmesh.ops.transform(door_bm, matrix=xf((cx, FY - 38, cz), Y90), verts=door_bm.verts)
+    if side == 'L':
+        RX, RZ, RW, RH, RD = cx + 40, cz - 20, 200, 300, 48                       # the cup recess
+        cutter = box(RW, 80, RH, 10)
+        bmesh.ops.transform(cutter, matrix=xf((RX, FY - 70 - 40 + RD, RZ)), verts=cutter.verts)
+        door_bm = apply_mods(door_bm, [('BOOLEAN', cutter)])
+    p.add(door_bm, 'Stainless')
     p.add(slab(dw - 50, dh - 50, 24, 14), 'Liner', xf((cx, FY - 2, cz), Y90))
     p.add(frame(dw - 14, dh - 14, 12, 16, 22), 'Gasket', xf((cx, FY + 2, cz), Y90))
     hx = cx - sx * (dw / 2 - 40)
-    p.add(pipe([(hx, FY - 70, cz - 260), (hx, FY - 108, cz - 260), (hx, FY - 108, cz + 260), (hx, FY - 70, cz + 260)], 11, 14), 'Stainless')
+    p.add(cyl(11, 560, 40, bevel=3), 'Stainless', xf((hx, FY - 108, cz)))
+    for dz in (-255, 255):
+        p.add(cyl(8, 40, 24), 'Stainless', xf((hx, FY - 88, cz + dz), Y90))
     for k, z in enumerate((cz - 330, cz - 60, cz + 230)):                               # door bins
         bw = dw - 110 if not (side == 'L' and k == 2) else dw - 260
         bx = cx if not (side == 'L' and k == 2) else cx + 60
@@ -176,19 +187,22 @@ def french_door(side):
         for e in (-1, 1):
             p.add(box(5, 100, 90, 3), 'Clear plastic', xf((bx + e * bw / 2, FY + 64, z)))
         p.add(box(bw, 8, 22, 3), 'Grey plastic', xf((bx, FY + 116, z + 34)))
-    p.add(box(30, 50, 60, 6), 'Black plastic', xf((cx + sx * (dw / 2 - 40), FY - 20, dz1 + 10)))     # top hinge
     if side == 'L':                                                                    # through-the-door dispenser
-        p.add(slab(220, 330, 16, 18), 'Black plastic', xf((cx + 40, FY - 72, cz + 40), Y90))
-        p.add(box(60, 30, 26, 8), 'Grey plastic', xf((cx + 40, FY - 82, cz + 112)))          # ice chute
-        p.add(cyl(5, 18, 12), 'Grey plastic', xf((cx + 70, FY - 82, cz + 104)))              # water nozzle
-        for i in range(7):
-            p.add(box(150, 3, 3), 'Grey plastic', xf((cx + 40, FY - 86 + i * 2, cz - 112)))  # drip tray grille
-        p.add(box(160, 24, 8, 3), 'Black plastic', xf((cx + 40, FY - 76, cz - 116)))
-        p.add(slab(180, 220, 20, 12), 'Display', xf((cx + 40, FY - 66, cz - 10), Y90))
-        p.add(box(120, 6, 40, 4), 'Display', xf((cx + 40, FY - 80, cz + 160)))
+        back_y = FY - 70 + RD
+        p.add(box(RW - 2, 2, RH - 2), 'Black plastic', xf((RX, back_y - 1, RZ)))                    # back wall
+        for sxx in (-1, 1):
+            p.add(box(2, RD, RH - 2), 'Black plastic', xf((RX + sxx * (RW / 2 - 1), back_y - RD / 2, RZ)))
+        p.add(box(RW - 2, RD, 2), 'Black plastic', xf((RX, back_y - RD / 2, RZ + RH / 2 - 1)))      # ceiling
+        p.add(box(RW - 2, RD, 2), 'Black plastic', xf((RX, back_y - RD / 2, RZ - RH / 2 + 1)))      # floor
+        p.add(box(70, 30, 34, 8), 'Grey plastic', xf((RX - 20, back_y - 18, RZ + RH / 2 - 18)))      # ice chute
+        p.add(cyl(5, 16, 16), 'Grey plastic', xf((RX + 50, back_y - 20, RZ + RH / 2 - 10)))          # water nozzle
+        p.add(box(90, 6, 110, 8), 'Grey plastic', xf((RX, back_y - 4, RZ + 20)))                    # cradle paddle
+        p.add(box(RW - 10, RD - 6, 6, 2), 'Black plastic', xf((RX, back_y - RD / 2, RZ - RH / 2 + 5)))
+        for i in range(10):
+            p.add(box(RW - 30, 2.5, 3), 'Grey plastic', xf((RX, back_y - 6 - i * 4, RZ - RH / 2 + 9)))  # drip tray grille
+        p.add(slab(RW, 60, 6, 6), 'Display', xf((RX, FY - 71, RZ + RH / 2 + 44), Y90))               # control strip
         for i in range(5):
-            p.add(box(14, 2, 8), 'Display glow', xf((cx - 6 + i * 22, FY - 84, cz + 160)))
-        p.add(box(80, 26, 70, 6), 'Grey plastic', xf((cx + 40, FY - 60, cz + 60)))       # paddle
+            p.add(box(14, 2, 8), 'Display glow', xf((RX - 44 + i * 22, FY - 75, RZ + RH / 2 + 44)))
     p.add(box(dw - 40, 6, 6, 2), 'Brushed edge', xf((cx, FY - 70, dz1 - 6)))           # top edge cap
     return p
 
@@ -285,8 +299,9 @@ for i in range(36):
     grille.add(box(14, 4, 30, 1), 'Painted steel', xf((-W / 2 + 40 + i * 23.5, FY - 14, 22)))
 fd.add(box(W - 60, 8, 6, 2), 'Brushed edge', xf((0, FY - 69, FZ1 - 8)))
 for sx in (-1, 1):
-    top.add(box(120, 60, 18, 6), 'Painted steel', xf((sx * (W / 2 - 70), FY + 40, H + 9)))   # hinge covers
+    top.add(box(90, 70, 12, 5), 'Painted steel', xf((sx * (W / 2 - 60), FY + 10, H + 6)))   # hinge covers
 for z in (500, 900, 1300):
     lin.add(box(2 * IX - 40, 10, 4, 2), 'Grey plastic', xf((0, IB - 6, z)))
+lin.add(box(W - 24, 4, ZM1 - ZM0 + 36, 2), 'Grey plastic', xf((0, FY - 2, (ZM0 + ZM1) / 2)))     # mullion face
 
 export('/home/claude/dbd/build/raw/fridge.glb')

@@ -16,13 +16,13 @@ K = 4751 / 1.34
 M = Matrix.Rotation(math.pi / 2, 4, 'Z') @ Matrix.Scale(K, 4) @ Matrix.Translation((0, -0.12, 0.08))
 AX, TR, WR = 1436, 771, 372
 
-RATIO = {'tires': 0.045, 'wheels': 0.08, 'calipers': 0.07, 'calipers2': 0.3, 'brakedsk': 0.12, 'chrome_rear_lights': 0.04,
+RATIO = {'tires': 0.07, 'wheels': 0.08, 'calipers': 0.07, 'calipers2': 0.3, 'brakedsk': 0.12, 'chrome_rear_lights': 0.04,
          'interior': 0.1, 'body': 0.65, 'fenders': 0.25, 'glass_lights': 0.07, 'chrome': 0.1, 'black2': 0.08, 'black': 0.3,
          'chrome_rear_2': 0.08, 'glass_body': 0.5, 'metal': 0.4, 'alum': 0.5, 'chrome_dark': 0.3, 'glass_front_lights': 0.5}
-DROP = {'91', '66', '60', '50', '04', '05', '18', '19', '23', '25', '02', '03', '22', '24', '88', '90'}                             # badges and logos (50 is the T-shaped fender badge)
+DROP = {'91', '66', '60', '50', '04', '05', '18', '19', '23', '25', '02', '03', '22', '24'}                             # badges and logos (50 is the T-shaped fender badge)
 TAIL = {'34', '35', '38', '39', '40', '61', '62', '63', '64', '65', '67', '94', '95', '96'}
 HEAD = {'57', '58', '59', '68', '69', '70', '71', '72', '73', '74', '77', '78', '79', '81', '82', '84', '86', '87', '89', '99', '100'}
-FFASCIA = {'52', '53', '76', '88', '90'}
+FFASCIA = {'52', '53', '76'}
 MIRROR = {'80', '85', '97'}
 LIFTGLASS = {'36', '37'}
 WINDSHIELD = {'92', '93'}
@@ -147,6 +147,9 @@ mat('Radiator fin', (0.7, 0.71, 0.72), metal=1, rough=0.4)
 mat('Dark chrome', (0.16, 0.16, 0.17), metal=0.9, rough=0.25)
 mat('Lamp chrome', (0.85, 0.86, 0.88), metal=1, rough=0.12)
 mat('Interior', (0.05, 0.05, 0.055), rough=0.6)
+mat('Lamp housing', (0.03, 0.03, 0.035), rough=0.35)
+mat('Clear lens', (0.9, 0.93, 0.95), rough=0.02, alpha=0.18, coat=1.0)
+mat('Red lens', (0.55, 0.02, 0.03), rough=0.05, alpha=0.55, coat=1.0)
 
 SRC_MAT = {'body': 'Paint', 'fenders': 'Matte black', 'black': 'Gloss black', 'black2': 'Gloss black', 'chrome': 'Dark chrome',
            'chrome_dark': 'Dark chrome', 'chrome_rear_2': 'Lamp chrome', 'chrome_rear_lights': 'Tail red', 'glass_body': 'Glass',
@@ -160,10 +163,16 @@ EXPLODE = {
     'Front left wheel and tyre': (250, 1150, 0), 'Front right wheel and tyre': (250, -1150, 0),
     'Rear left wheel and tyre': (-250, 1150, 0), 'Rear right wheel and tyre': (-250, -1150, 0),
     'Left brakes': (0, 800, 0), 'Right brakes': (0, -800, 0)}
+LAMP = {
+    'Headlights': {'chrome': 'Lamp chrome', 'chrome_dark': 'Lamp chrome', 'black': 'Lamp housing', 'black2': 'Lamp housing',
+                   'glass_lights': 'Clear lens', 'glass_front_lights': 'DRL', 'alum': 'Lamp chrome', 'metal': 'Lamp chrome'},
+    'Tail lights': {'chrome_rear_lights': 'Tail red', 'chrome_rear_2': 'Lamp chrome', 'black2': 'Lamp housing', 'black': 'Lamp housing',
+                    'glass_lights': 'Red lens', 'chrome': 'Lamp chrome'},
+}
 for name, items in buckets.items():
     p = Part(name, EXPLODE.get(name, (0, 0, 0)), smooth=40, recalc=False)
     for mtl, bm in items:
-        p.add(bm, SRC_MAT.get(mtl, 'Gloss black'))
+        p.add(bm, LAMP.get(name, {}).get(mtl, SRC_MAT.get(mtl, 'Gloss black')))
 
 # ------------------------------------------------------------- structural battery pack
 PX0, PX1, PY, PZ = -950, 1000, 720, 170
@@ -345,7 +354,7 @@ hv = Part('High-voltage cabling and charge port', (-300, 950, -250))
 for sy in (-1, 1):
     hv.add(pipe([(PX1 + 10, sy * 220, PZ + 110), (PX1 + 200, sy * 200, 300), (AX - 80, sy * 100, 600), (AX + 70, 60, WR + 280)], 16, 10), 'HV cable')
     hv.add(pipe([(PX0 - 10, sy * 200, PZ + 110), (PX0 - 200, sy * 150, 300), (-AX + 120, sy * 60, WR + 300)], 16, 10), 'HV cable')
-hv.add(pipe([(-1900, 900, 880), (-1700, 700, 700), (-1300, 600, 400), (PX0 + 20, 600, PZ + 120)], 14, 10), 'HV cable')
-hv.add(box(80, 40, 90, 14), 'Plastic', xf((-1910, 930, 890)))
+hv.add(pipe([(-1900, 820, 880), (-1700, 680, 700), (-1300, 600, 400), (PX0 + 20, 600, PZ + 120)], 14, 10), 'HV cable')
+hv.add(box(80, 40, 90, 14), 'Plastic', xf((-1910, 820, 890)))
 
 export('/home/claude/dbd/build/raw/model_y.glb')

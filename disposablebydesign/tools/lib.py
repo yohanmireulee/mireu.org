@@ -276,6 +276,7 @@ class Part:
         idx = self.mats.index(material)
         if M is not None:
             bmesh.ops.transform(prim, matrix=M, verts=prim.verts)
+            rotate_normals(prim, M)
         for f in prim.faces:
             f.material_index = idx
         tmp = bpy.data.meshes.new('_tmp')
@@ -302,11 +303,37 @@ class Part:
             pass
         ob = bpy.data.objects.new(self.name, me)
         bpy.context.scene.collection.objects.link(ob)
+        # shading: area-weighted normals (flat faces stay flat next to bevels), overridden by any normals
+        # transferred from a high-resolution source
+        wn = ob.modifiers.new('_wn', 'WEIGHTED_NORMAL'); wn.keep_sharp = True; wn.mode = 'FACE_AREA'; wn.weight = 50
+        ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        em = ev.to_mesh()
+        base = [tuple(c.vector) for c in em.corner_normals]
+        ev.to_mesh_clear()
+        ob.modifiers.remove(wn)
+        att = me.attributes
+        if 'nx' in att:
+            nx, ny, nz = att['nx'].data, att['ny'].data, att['nz'].data
+            out = []
+            for i, b in enumerate(base):
+                v = (nx[i].value, ny[i].value, nz[i].value)
+                out.append(v if v[0] * v[0] + v[1] * v[1] + v[2] * v[2] > 0.25 else b)
+            for k in ('nx', 'ny', 'nz'):
+                att.remove(att[k])
+        else:
+            out = base
+        me.normals_split_custom_set(out)
         ob['explode'] = [v * scale for v in self.explode]
         return ob
 
 
 def export(path, scale=0.001):
+    import os
+    only = os.environ.get('ONLY')
+    if only:
+        keep = [n.strip() for n in only.split('|')]
+        PARTS[:] = [p for p in PARTS if p.name in keep]
+        path = path.replace('.glb', '_only.glb')
     objs = [p.build(scale) for p in PARTS]
     for o in objs:
         o.select_set(True)
@@ -428,25 +455,98 @@ def open_source(path):
     bpy.context.view_layer.update()
 
 
-def grab(obj, M=None, ratio=1.0, weld=0.0):
-    """Copy an object's evaluated mesh (world space, optionally decimated) into a free bmesh, then apply M."""
+def _rot(Mx):
+    r = Mx.to_3x3()
+    for i in range(3):
+        col = Vector((r[0][i], r[1][i], r[2][i]))
+        l = col.length or 1.0
+        for j in range(3):
+            r[j][i] /= l
+    return r
+
+
+def _ensure_nlayers(bm):
+    L = bm.loops.layers.float
+    return [L.get(k) or L.new(k) for k in ('nx', 'ny', 'nz')]
+
+
+def rotate_normals(bm, Mx):
+    L = bm.loops.layers.float
+    if L.get('nx') is None:
+        return
+    lx, ly, lz = L.get('nx'), L.get('ny'), L.get('nz')
+    R = _rot(Mx)
+    for f in bm.faces:
+        for lp in f.loops:
+            n = Vector((lp[lx], lp[ly], lp[lz]))
+            if n.length_squared > 0.25:
+                n = (R @ n).normalized()
+                lp[lx], lp[ly], lp[lz] = n.x, n.y, n.z
+
+
+def grab(obj, M=None, ratio=1.0, weld=0.0, transfer=None, smooth_src=40):
+    """Copy an object's mesh (world space, optionally welded and decimated) into a free bmesh, then apply M.
+
+    When the mesh is decimated, the high-resolution surface's shading normals are transferred onto the
+    low-resolution copy and carried along as loop layers (nx, ny, nz), so curves stay smooth without
+    keeping the triangles. Part.build turns them back into custom normals."""
     ob = bpy.data.objects[obj] if isinstance(obj, str) else obj
+    if transfer is None:
+        transfer = ratio < 1.0
+    coll = bpy.context.scene.collection
+    dg = bpy.context.evaluated_depsgraph_get
     mods = []
     if weld > 0:
         w = ob.modifiers.new('_w', 'WELD'); w.merge_threshold = weld; mods.append(w)
+    hi = None
+    if transfer:
+        hi_me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg()))
+        # shade the dense surface ourselves (the source's own normals are often noisy)
+        if hi_me.has_custom_normals:
+            hi_me.normals_split_custom_set([(0.0, 0.0, 0.0)] * len(hi_me.loops))
+        for p in hi_me.polygons:
+            p.use_smooth = True
+        try:
+            hi_me.set_sharp_from_angle(angle=math.radians(smooth_src))
+        except Exception:
+            pass
+        hi = bpy.data.objects.new('_hi', hi_me); coll.objects.link(hi); hi.matrix_world = ob.matrix_world
+        # area-and-angle weighting keeps big flat faces flat where they meet fillets (CAD meshes are full
+        # of long fan triangles that otherwise smear the fillet's normal across the whole face)
+        wn = hi.modifiers.new('_wn', 'WEIGHTED_NORMAL'); wn.mode = 'FACE_AREA_WITH_ANGLE'; wn.keep_sharp = True; wn.weight = 100
     if ratio < 1.0:
         d = ob.modifiers.new('_d', 'DECIMATE'); d.ratio = ratio; d.use_collapse_triangulate = True; mods.append(d)
-    dg = bpy.context.evaluated_depsgraph_get()
-    ev = ob.evaluated_get(dg)
-    me = ev.to_mesh()
-    bm = bmesh.new()
-    bm.from_mesh(me)
-    ev.to_mesh_clear()
+    lo_me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg()))
     for m in mods:
         ob.modifiers.remove(m)
+    normals = None
+    if transfer:
+        lo = bpy.data.objects.new('_lo', lo_me); coll.objects.link(lo); lo.matrix_world = ob.matrix_world
+        dt = lo.modifiers.new('_t', 'DATA_TRANSFER')
+        dt.object = hi; dt.use_object_transform = True
+        dt.use_loop_data = True; dt.data_types_loops = {'CUSTOM_NORMAL'}; dt.loop_mapping = 'POLYINTERP_NEAREST'
+        ev = lo.evaluated_get(dg())
+        em = ev.to_mesh()
+        normals = [tuple(c.vector) for c in em.corner_normals]
+        bm = bmesh.new(); bm.from_mesh(em)
+        ev.to_mesh_clear()
+        bpy.data.objects.remove(lo); bpy.data.objects.remove(hi)
+        bpy.data.meshes.remove(hi_me)
+    else:
+        bm = bmesh.new(); bm.from_mesh(lo_me)
+    bpy.data.meshes.remove(lo_me)
+    if normals is not None:
+        lx, ly, lz = _ensure_nlayers(bm)
+        R = _rot(ob.matrix_world)
+        i = 0
+        for f in bm.faces:
+            for lp in f.loops:
+                n = (R @ Vector(normals[i])).normalized(); i += 1
+                lp[lx], lp[ly], lp[lz] = n.x, n.y, n.z
     bmesh.ops.transform(bm, matrix=ob.matrix_world, verts=bm.verts)
     if M is not None:
         bmesh.ops.transform(bm, matrix=M, verts=bm.verts)
+        rotate_normals(bm, M)
     return bm
 
 

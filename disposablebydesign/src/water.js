@@ -45,7 +45,7 @@ vec3 sky(vec3 d) {
   vec3 c = mix(vec3(0.30, 0.42, 0.52), vec3(0.12, 0.21, 0.30), pow(y, 0.5)); // brighter at the horizon
   c += vec3(0.55, 0.50, 0.42) * pow(max(dot(d, SUN), 0.0), 24.0) * 0.6;       // glow around the sun
   // soft cloud cover, so every tilted facet reflects a slightly different patch of sky
-  vec2 cp = d.xz / max(d.y, 0.15) * 1.6 + uTime * 0.01;
+  vec2 cp = d.xz / max(d.y, 0.15) * 1.6 + uTime * 0.005;
   float cl = 0.5 * noise(cp) + 0.25 * noise(cp * 2.1 + 3.7) + 0.125 * noise(cp * 4.3 - 1.3);
   c *= 0.82 + 0.45 * clamp(cl + 0.35, 0.0, 1.0);
   return c;
@@ -54,7 +54,7 @@ vec3 sky(vec3 d) {
 void main() {
   vec2 frag = gl_FragCoord.xy;
   vec2 q = (frag - 0.5 * uRes) / uRes.y;
-  float t = 1.0 + uTime * 0.22;
+  float t = 1.0 + uTime * 0.11;                         // half the portfolio's pace
 
   // camera high above the water, looking almost straight down with a slight forward tilt
   vec3 ro = vec3(uDrift.x * 40.0, 10.0, uDrift.y * 40.0);
@@ -128,7 +128,7 @@ export function startWater(canvas) {
     resize();
     const t = reduced ? 20 : (now - t0) / 1000;
     gl.uniform1f(uTime, t);
-    gl.uniform2f(uDrift, t * 0.012, t * 0.006);
+    gl.uniform2f(uDrift, t * 0.006, t * 0.003);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
   raf = requestAnimationFrame(frame);

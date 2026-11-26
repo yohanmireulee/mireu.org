@@ -43,14 +43,14 @@ def sheet(sx, sy, sz):
     return box(sx, sy, sz, 3)
 
 ls = Part('Left side panel', (-700, 0, 0))
-ls.add(sheet(10, D - 20, H - 120), 'Enamel', xf((-W / 2 + 5, 10, (H - 120) / 2 + 100)))
+ls.add(sheet(10, D - 12, H - 18), 'Enamel', xf((-W / 2 + 5, 6, (H - 18) / 2)))
 ls.add(box(4, D - 80, 30), 'Galvanised steel', xf((-W / 2 + 12, 10, H - 60)))       # top flange
 rs = Part('Right side panel', (700, 0, 0))
-rs.add(sheet(10, D - 20, H - 120), 'Enamel', xf((W / 2 - 5, 10, (H - 120) / 2 + 100)))
+rs.add(sheet(10, D - 12, H - 18), 'Enamel', xf((W / 2 - 5, 6, (H - 18) / 2)))
 rs.add(box(4, D - 80, 30), 'Galvanised steel', xf((W / 2 - 12, 10, H - 60)))
 
 rp = Part('Rear panel', (0, 980, 0))
-rp.add(box(W - 20, 8, H - 120, 2), 'Galvanised steel', xf((0, D / 2 - 4, (H - 120) / 2 + 100)))
+rp.add(box(W - 20.4, 8, H - 30, 2), 'Galvanised steel', xf((0, D / 2 - 4.2, (H - 30) / 2 + 6)))
 for x, z in ((-200, 820), (200, 820), (0, 760)):
     rp.add(cyl(14, 14, 16), 'Black plastic', xf((x, D / 2 + 4, z), Y90))           # hose ports, cord grommet
 for i in range(6):                                                                  # stiffening pressings
@@ -64,7 +64,7 @@ fp.add(apply_mods(box(W, 12, H - 230, 4), [('BOOLEAN', cut)]), 'Enamel', xf((0, 
 fp.add(ring(232, 216, 10, 72), 'White plastic', xf((0, FY - 2, CZ), Y90))          # door opening trim
 
 tk = Part('Toe kick and pump access', (0, -700, -260))
-tk.add(box(W, 10, 100, 3), 'Enamel', xf((0, FY + 5, 60)))
+tk.add(box(W - 0.4, 10, 100, 3), 'Enamel', xf((0, FY + 5.2, 60)))
 tk.add(slab(110, 70, 6, 10), 'White plastic', xf((W / 2 - 110, FY - 1, 60), Y90))  # filter flap
 
 # ------------------------------------------------------------- console + drawer
@@ -77,13 +77,13 @@ for k in range(24):                                                             
     con.add(box(2, 2, 8), 'Display glow', xf((60 + 50 * math.cos(a), FY + 3, H - 78 + 50 * math.sin(a)), (0, -math.degrees(a), 0)))
 con.add(box(120, 4, 40, 3), 'Display', xf((200, FY + 4, H - 70)))
 for i, w in enumerate((18, 12, 18, 12, 6)):                                             # digits
-    con.add(box(w, 1, 16), 'Display glow', xf((160 + i * 20, FY + 1.5, H - 70)))
+    con.add(box(w, 1, 16), 'Display glow', xf((160 + i * 20, FY + 1.0, H - 70)))
 for i in range(6):
     con.add(cyl(7, 4, 20), 'Dark chrome', xf((150 + i * 22, FY + 3, H - 108), Y90))
 con.add(cyl(11, 6, 24), 'Chrome', xf((300, FY + 2, H - 78), Y90))                        # power
 
 dr = Part('Detergent drawer', (-160, -720, 640))
-dr.add(box(220, 14, 112, 5), 'White plastic', xf((-210, FY - 2, H - 80)))
+dr.add(box(220, 14, 112, 5), 'White plastic', xf((-210, FY - 3, H - 80)))
 dr.add(box(150, 4, 20, 4), 'Console', xf((-210, FY - 10, H - 60)))                       # finger pull
 dr.add(box(206, 320, 90, 4), 'White plastic', xf((-210, FY + 170, H - 84)))
 for x in (-150, -45):
@@ -161,7 +161,7 @@ for i in range(13):
         n = (math.cos(a), 0, math.sin(a))
         drum.add(quad((268.6 * n[0], yy, CZ + 268.6 * n[2]), n, 6, (0, 1, 0)), 'Perforation')
 for k in range(3):                                                                      # lifters
-    a = math.radians(90 + 120 * k)
+    a = math.radians(30 + 120 * k)
     beta = math.atan2(-math.cos(a), -math.sin(a))
     M = Matrix.Translation((267 * math.cos(a), (DF + DB) / 2, CZ + 267 * math.sin(a))) @ Matrix.Rotation(beta, 4, 'Y') @ xf((0, 0, 0), (90, 0, 0))
     drum.add(prism([(-28, 0), (28, 0), (10, 46), (-10, 46)], DB - DF - 50), 'White plastic', M)
@@ -281,11 +281,9 @@ for k in range(10):
     con.add(box(14, 1, 2), 'Display glow' if k == 3 else 'Dark chrome', xf((60 + 66 * math.cos(a), FY + 4, H - 78 + 44 * math.sin(a)), (0, -math.degrees(a), 0)))
 con.add(torus(40, 1.2, 48, 6), 'Display glow', xf((60, FY + 3.5, H - 78), Y90))
 con.add(box(10, 1, 10, 2), 'Dark chrome', xf((300, FY + 3.5, H - 56)))
-con.add(box(W - 30, 2, 2), 'Dark chrome', xf((0, FY + 4, H - 20)))                  # console top trim line
+con.add(box(W - 30, 2, 2), 'Dark chrome', xf((0, FY + 3.4, H - 20)))                  # console top trim line
 # front panel: a pressed shoulder line and rounded vertical edges
-fp.add(box(W - 30, 3, 3, 1), 'Enamel', xf((0, FY - 1, 168)))
-for sx in (-1, 1):
-    fp.add(cyl(6, H - 240, 12), 'Enamel', xf((sx * (W / 2 - 6), FY + 6, (H - 230) / 2 + 110)))
+fp.add(box(W - 40, 3, 3, 1), 'Enamel', xf((0, FY - 1.2, 168)))
 # door: inner gasket lip, hinge plate, a finger recess on the handle
 door.add(torus(206, 4, 96, 8), 'Black rubber', xf((0, FY + 2, CZ), Y90))
 door.add(box(16, 8, 210, 4), 'Black plastic', xf((-270, FY - 4, CZ)))
@@ -311,7 +309,7 @@ psw.add(pipe([(220, 160, H - 122), (240, 120, 600), (200, 40, 220), (60, -40, CZ
 # wiring harness from the board down to the motor, pump and lock
 harn = Part('Wiring harness', (-120, 120, 300))
 harn.add(pipe([(-90, FY + 200, H - 110), (-300, -100, H - 130), (-310, 150, 700), (-280, D / 2 - 70, 420), (-120, SY + 30, CZ + 90)], 6, 8), 'Black plastic')
-harn.add(pipe([(-300, -100, H - 130), (-310, -250, 600), (262, FY + 60, CZ - 40)], 4, 8), 'Black plastic')
+harn.add(pipe([(-300, -100, H - 130), (150, FY + 70, H - 145), (262, FY + 70, CZ + 140), (262, FY + 70, CZ + 50)], 4, 8), 'Black plastic')
 harn.add(pipe([(-310, 150, 700), (-300, 50, 250), (PX - 70, PY + 40, PZ + 40)], 4, 8), 'Black plastic')
 
 export('/home/claude/dbd/build/raw/washer.glb')

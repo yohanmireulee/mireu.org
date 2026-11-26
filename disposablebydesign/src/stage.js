@@ -29,8 +29,10 @@ export function createStage(canvas, opts = {}) {
   scene.add(fill);
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 200);
+  const tilt = new THREE.Group();           // tumbles when dragged up and down
   const pivot = new THREE.Group();          // spins
-  scene.add(pivot);
+  tilt.add(pivot);
+  scene.add(tilt);
 
   const outlineMat = new THREE.ShaderMaterial({
     uniforms: { color: { value: ORANGE }, px: { value: 2.6 }, res: { value: new THREE.Vector2(1, 1) }, alpha: { value: 0 } },
@@ -55,7 +57,7 @@ export function createStage(canvas, opts = {}) {
 
   const state = {
     obj: null, parts: [], byName: new Map(), explode: 0, explodeTarget: 0,
-    view: { pitch: 0.4, spin: 0.12, ex: 1, yaw: 0 }, yaw: 0, dragYaw: 0, dragPitch: 0,
+    view: { pitch: 0.4, spin: 0.12, ex: 1, yaw: 0 }, yaw: 0, dragYaw: 0, dragPitch: 0, tilt: 0, lastDrag: 0, explodeRate: 4,
     selected: new Set(), sel: 0, offsetX: 0, offsetY: 0, visible: 1, visibleTarget: 1,
     fit: { c0: new THREE.Vector3(), r0: 1, c1: new THREE.Vector3(), r1: 1 }, focus: new THREE.Vector3(), focusW: 0,
     reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -116,9 +118,10 @@ export function createStage(canvas, opts = {}) {
     });
     state.obj.updateMatrixWorld(true);
     // measure in the object's own frame (ignoring spin)
-    const saved = pivot.rotation.y; pivot.rotation.y = 0; pivot.updateMatrixWorld(true);
+    const saved = pivot.rotation.y, savedT = tilt.rotation.x;
+    pivot.rotation.y = 0; tilt.rotation.x = 0; tilt.updateMatrixWorld(true);
     b.setFromObject(state.obj);
-    pivot.rotation.y = saved; pivot.updateMatrixWorld(true);
+    pivot.rotation.y = saved; tilt.rotation.x = savedT; tilt.updateMatrixWorld(true);
     const s = b.getBoundingSphere(new THREE.Sphere());
     return { c: s.center, r: s.radius };
   }
@@ -131,7 +134,7 @@ export function createStage(canvas, opts = {}) {
     state.byName = new Map(parts.map((p) => [p.name, p]));
     pivot.add(root);
     state.view = { pitch: 0.4, spin: 0.12, ex: 1, yaw: 0, ...view };
-    state.yaw = state.view.yaw; state.dragYaw = 0; state.dragPitch = 0;
+    state.yaw = state.view.yaw; state.dragYaw = 0; state.dragPitch = 0; state.tilt = 0; tilt.rotation.x = 0;
     const a = measure(0), b = measure(state.view.ex);
     state.fit = { c0: a.c, r0: a.r, c1: b.c, r1: b.r };
     state.explode = state.explodeTarget;
@@ -186,7 +189,7 @@ export function createStage(canvas, opts = {}) {
         b.expandByObject(p.node);
       });
       state.parts.forEach((p) => p.node.position.copy(p.home).addScaledVector(p.dir, state.explode * state.view.ex));
-      state.focus.copy(b.getCenter(new THREE.Vector3())).applyAxisAngle(new THREE.Vector3(0, 1, 0), -pivot.rotation.y);
+      state.focus.copy(pivot.worldToLocal(b.getCenter(new THREE.Vector3())));
       state.focusR = b.getBoundingSphere(new THREE.Sphere()).radius / Math.max(1e-6, state.fit.r1);
     }
   }
@@ -205,13 +208,14 @@ export function createStage(canvas, opts = {}) {
   // ---------------------------------------------------------------- input
   let drag = null;
   canvas.addEventListener('pointerdown', (e) => {
-    drag = { x: e.clientX, y: e.clientY, yaw: state.dragYaw, pitch: state.dragPitch };
+    drag = { x: e.clientX, y: e.clientY, yaw: state.dragYaw, tilt: state.tilt };
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', (e) => {
     if (!drag) return;
     state.dragYaw = drag.yaw + (e.clientX - drag.x) * 0.008;
-    state.dragPitch = Math.max(-0.5, Math.min(0.6, drag.pitch + (e.clientY - drag.y) * 0.005));
+    state.tilt = drag.tilt + (e.clientY - drag.y) * 0.008;     // all the way over, to see the underside
+    state.lastDrag = performance.now();
   });
   const end = () => { drag = null; };
   canvas.addEventListener('pointerup', end);
@@ -224,12 +228,19 @@ export function createStage(canvas, opts = {}) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     if (state.obj) {
-      state.explode = damp(state.explode, state.explodeTarget, 10, dt);
+      state.explode = damp(state.explode, state.explodeTarget, state.explodeRate, dt);
       const ex = state.explode * state.view.ex;
       state.parts.forEach((p) => p.node.position.copy(p.home).addScaledVector(p.dir, ex));
 
       if (!state.reduce && !drag) state.yaw += dt * state.view.spin;
       pivot.rotation.y = state.yaw + state.dragYaw;
+      // after a while untouched, ease the tumble back toward the nearest upright pose
+      if (!drag && now - state.lastDrag > 4000) {
+        const k = Math.round(state.tilt / (Math.PI * 2)) * Math.PI * 2;
+        state.tilt = damp(state.tilt, k, 1.2, dt);
+      }
+      tilt.rotation.x = state.tilt;
+      tilt.updateMatrixWorld(true);
 
       const any = state.selected.size > 0;
       state.sel = damp(state.sel, any ? 1 : 0, 7, dt);
@@ -246,8 +257,8 @@ export function createStage(canvas, opts = {}) {
       const r = THREE.MathUtils.lerp(state.fit.r0 * 1.12, state.fit.r1, k);
       const small = 1 - Math.min(1, (state.focusR || 1) * 2.2);       // 1 for tiny parts, 0 for big ones
       focusMix = damp(focusMix, any ? 0.22 + 0.5 * small : 0, 3, dt);
-      const fx = state.focus.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), pivot.rotation.y);
-      const cx = tmpC.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), pivot.rotation.y);
+      const fx = pivot.localToWorld(state.focus.clone());
+      const cx = pivot.localToWorld(tmpC.clone());
       const target = cx.lerp(fx, focusMix);
       const fov = THREE.MathUtils.degToRad(camera.fov);
       const fitV = r / Math.sin(fov / 2);
@@ -278,6 +289,7 @@ export function createStage(canvas, opts = {}) {
     set offset([x, y]) { state.offsetX = x; state.offsetY = y; applyOffset(); },
     set visible(v) { state.visibleTarget = v; },
     set zoom(v) { state.zoom = v; },
+    set rate(v) { state.explodeRate = v; },
     jump() { state.explode = state.explodeTarget; },
     preload: (url) => load(url),
     state,
