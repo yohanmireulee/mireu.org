@@ -1,0 +1,22 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #0b1026; /* Same navy as the game so the letterbox bars blend in */
+  overflow: hidden;
+}
+
+main {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scales the 1280x720 canvas to fit any window while keeping the 16:9 shape */
+canvas {
+  display: block;
+  width: min(100vw, calc(100vh * 16 / 9)) !important;
+  height: auto !important;
+}
