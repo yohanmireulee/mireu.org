@@ -46,19 +46,20 @@ d = 0.16; n = int(SR * d)
 x = partials([1250, 2710, 4400], [1, 0.45, 0.2], d, 0.025) * env(n, 0.0008, 0.05) + noise(d, 0.35) * env(n, 0.0003, 0.006) * 0.5
 save('dbd_click', room(x))
 
-# step: a part lifting free, a low thunk with a short metallic ring
-d = 0.55; n = int(SR * d); t = np.arange(n) / SR
-thunk = np.sin(2 * np.pi * (110 - 40 * t) * t) * env(n, 0.002, 0.07)
-ring = partials([1830, 2960, 4210], [0.25, 0.16, 0.08], d, 0.16)
-air = noise(d, 0.08) * env(n, 0.03, 0.12) * 0.25
-save('dbd_step', room(thunk + ring + air, 0.25))
+# step: a soft, dry tap (no ring), like setting a part down on a felt mat
+d = 0.12; n = int(SR * d); t = np.arange(n) / SR
+tap = np.sin(2 * np.pi * (190 - 60 * t) * t) * env(n, 0.001, 0.022)
+felt = noise(d, 0.06) * env(n, 0.0008, 0.008) * 0.35
+save('dbd_step', room(tap + felt, 0.06), 0.42)
 
-# back: the same, reversed in pitch, softer
-d = 0.45; n = int(SR * d); t = np.arange(n) / SR
-thunk = np.sin(2 * np.pi * (80 + 30 * t) * t) * env(n, 0.002, 0.06)
-ring = partials([1500, 2410], [0.18, 0.1], d, 0.12)
-save('dbd_back', room(thunk + ring, 0.2), 0.7)
+# back: the same tap, a little lower
+tap = np.sin(2 * np.pi * (150 - 50 * t) * t) * env(n, 0.001, 0.022)
+save('dbd_back', room(tap + felt, 0.06), 0.38)
 
+# (replay the random stream the original sounds drew, so the ratchet below stays exactly as it was)
+rng = np.random.default_rng(3)
+for dd in (0.07, 0.16, 0.55):
+    rng.standard_normal(int(SR * dd))
 # apart: a ratchet run, many small clicks
 d = 0.7; n = int(SR * d); x = np.zeros(n)
 for k in range(14):

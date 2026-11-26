@@ -16,6 +16,38 @@ open_source(SRC)
 M = Matrix.Translation((0, 0, 9)) @ Matrix.Rotation(math.pi, 4, 'Z') @ Matrix.Rotation(math.pi / 2, 4, 'X')
 SEAM = 2.2                      # height of the bottom-case seam (mm above the ground)
 
+# The CAD deck carries speaker grilles either side of the keyboard (a MacBook Pro detail; the Air's
+# speakers fire through the hinge). Delete the perforated strips on the dense source and cap them flat.
+def _no_grilles(name):
+    """Plug every perforation: delete each hole's little wall tube and cap its top and bottom rims, so the
+    deck reads as one continuous sheet."""
+    ob = bpy.data.objects[name]
+    T = M @ ob.matrix_world
+    g = bmesh.new(); g.from_mesh(ob.data)
+    bmesh.ops.remove_doubles(g, verts=g.verts, dist=0.002)
+    g.normal_update()
+    R = T.to_3x3()
+    inside = lambda c: 137.5 < abs(c.x) < 151.5 and -10 < c.y < 104 and c.z > 6
+    walls = set(f for f in g.faces if abs((R @ f.normal).normalized().z) < 0.35 and inside(T @ f.calc_center_median()))
+    seen = set(); kill = []
+    for f in walls:                                   # connected wall tubes; keep only hole-sized ones
+        if f in seen: continue
+        comp = []; stack = [f]; seen.add(f)
+        while stack:
+            h = stack.pop(); comp.append(h)
+            for e in h.edges:
+                for k in e.link_faces:
+                    if k in walls and k not in seen:
+                        seen.add(k); stack.append(k)
+        pts = [T @ v.co for h in comp for v in h.verts]
+        if max(p.x for p in pts) - min(p.x for p in pts) < 2.5 and max(p.y for p in pts) - min(p.y for p in pts) < 2.5:
+            kill.extend(comp)
+    bmesh.ops.delete(g, geom=kill, context='FACES_ONLY')
+    edges = [e for e in g.edges if e.is_boundary]
+    caps = bmesh.ops.holes_fill(g, edges=edges, sides=0)['faces']
+    print('grille wall faces removed', len(kill), 'caps', len(caps))
+    g.to_mesh(ob.data); g.free()
+_no_grilles(P + 'BOTTOM_1')
 base = grab(P + 'BOTTOM_1', M, ratio=0.09, transfer=False)
 
 

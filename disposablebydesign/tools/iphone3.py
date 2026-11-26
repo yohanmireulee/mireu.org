@@ -98,7 +98,7 @@ ear = Part('Earpiece speaker', (0, 28, 48))
 ear.add(box(11, 2.4, 2.0, 0.6), 'Black plastic', xf((0, 71.5, 1.8)))
 ear.add(box(10, 1.2, 0.2), 'Mesh', xf((0, 71.8, 2.9)))
 
-fr = Part('Aluminium unibody', (0, 0, 0))
+fr = Part('Aluminum unibody', (0, 0, 0))
 fr.add(band, 'Frame')
 
 mid = Part('Midframe and vapor chamber', (0, 0, 24))
@@ -161,7 +161,7 @@ tray = Part('Battery tray', (-62, -4, -26))
 tray.add(slab(67, 87, 0.3, 4, 8), 'Steel', xf((-1, -19, -3.45)))
 for sx in (-1, 1):
     tray.add(box(0.3, 82, 2.0), 'Steel', xf((-1 + sx * 33.4, -19, -2.45)))
-for x, y in ((-33, 22), (31, 22), (-33, -58), (31, -58)):                             # tabs for the Torx Plus screws
+for x, y in ((-31, 22), (30, 22), (-31, -58), (30, -58)):                             # tabs for the Torx Plus screws (inboard of the frame wall)
     tray.add(slab(6, 5, 0.3, 1.5, 6), 'Steel', xf((x, y, -1.2)))
     tray.add(screw(1.6, 1.0, 0.5), 'Steel', xf((x, y, -1.0)))
     tray.add(box(0.8, 0.2, 0.05), 'Black plastic', xf((x, y, -0.05)))

@@ -284,7 +284,7 @@ wv.add(cyl(10, 40, 12), 'Copper', xf((-330, BY - 20, 70), Y90))
 wv.add(pipe([(-330, BY - 60, 140), (-420, BY - 50, 300), (-420, BY - 50, H - 30), (250, FY + 200, H - 6 - T - 95)], 5, 8), 'Blue line')
 wv.add(pipe([(-300, BY - 60, 140), (-410, BY - 70, 320), (-410, BY - 70, H - 20), (-W / 2 + 40, FY - 20, H + 4)], 5, 8), 'White plastic')
 
-ft = Part('Rollers and levelling feet', (0, 0, -260))
+ft = Part('Rollers and leveling feet', (0, 0, -260))
 for sx in (-1, 1):
     ft.add(cyl(10, 50, 12), 'Steel', xf((sx * (W / 2 - 50), FY + 50, 20)))
     ft.add(cyl(26, 14, 24, bevel=3), 'Rubber', xf((sx * (W / 2 - 50), FY + 50, -6)))

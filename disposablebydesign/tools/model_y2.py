@@ -18,7 +18,7 @@ AX, TR, WR = 1436, 771, 372
 
 RATIO = {'tires': 0.07, 'wheels': 0.08, 'calipers': 0.07, 'calipers2': 0.3, 'brakedsk': 0.12, 'chrome_rear_lights': 0.04,
          'interior': 0.1, 'body': 0.65, 'fenders': 0.25, 'glass_lights': 0.07, 'chrome': 0.1, 'black2': 0.08, 'black': 0.3,
-         'chrome_rear_2': 0.08, 'glass_body': 0.5, 'metal': 0.4, 'alum': 0.5, 'chrome_dark': 0.3, 'glass_front_lights': 0.5}
+         'chrome_rear_2': 0.08, 'glass_body': 1.0, 'metal': 0.4, 'alum': 0.5, 'chrome_dark': 0.3, 'glass_front_lights': 0.5}
 DROP = {'91', '66', '60', '04', '05', '18', '19', '23', '25', '02', '03', '22', '24'}                                    # badges and logos
 REPEATER = '50'                    # fender camera housings: kept, with the engraved T filled in
 TAIL = {'34', '35', '38', '39', '40', '61', '62', '63', '64', '65', '67', '94', '95', '96'}
@@ -148,7 +148,7 @@ for o in [o for o in bpy.data.objects if o.type == 'MESH']:
     bm.verts.ensure_lookup_table()
     mn, mx = centre(bm); c = (mn + mx) / 2
     if mtl in ('tires', 'wheels', 'metal', 'alum') and mx.z < 800:
-        q = ('Front ' if c.x > 0 else 'Rear ') + ('left' if c.y > 0 else 'right') + ' wheel and tyre'
+        q = ('Front ' if c.x > 0 else 'Rear ') + ('left' if c.y > 0 else 'right') + ' wheel and tire'
         put(q, mtl, bm); continue
     if mtl in ('calipers', 'calipers2', 'brakedsk'):
         put('Left brakes' if c.y > 0 else 'Right brakes', mtl, bm); continue
@@ -265,12 +265,59 @@ for mtl, bm, lab in DEFER:
         if new and new != L:
             lab[i] = (comp, new); moved[(L, new)] = moved.get((L, new), 0) + 1
 print('fragments moved', moved)
+VLAB = []
 for mtl, bm, lab in DEFER:
     vlab = {}
     for comp, L in lab:
         for j in comp: vlab[j] = L
+    VLAB.append(vlab)
+for (mtl, bm, lab), vlab in zip(DEFER, VLAB):
     for L, piece_bm in split_faces(bm, lambda f: vlab.get(f.verts[0].index)).items():
         put(L, mtl, piece_bm)
+
+# ---- trim the lid's side edges straight ------------------------------------------------------------------
+# Near the front corners the source hands a flap of the lid to the fender on one side and a flap of the
+# fender to the lid on the other. Fit the lid's side edges where they are clean (a straight taper), then cut
+# the corner pieces along that line so both sides split the same way.
+import numpy as np
+_lid = np.array([v.co[:] for mtl, b in buckets['Frunk lid'] for v in b.verts])
+_xs = np.arange(1250, 1851, 50)
+_hw = []; _cy = []
+for x0 in _xs:
+    m = (_lid[:, 0] >= x0) & (_lid[:, 0] < x0 + 50)
+    _hw.append((_lid[m, 1].max() - _lid[m, 1].min()) / 2); _cy.append((_lid[m, 1].max() + _lid[m, 1].min()) / 2)
+LB, LA = np.polyfit(_xs + 25, _hw, 1); LC = float(np.median(_cy))
+_zlow = {int(x0): _lid[(_lid[:, 0] >= x0) & (_lid[:, 0] < x0 + 50), 2].min() for x0 in range(1700, 2151, 50)}
+half = lambda x: LA + LB * x
+print('lid edge fit: half-width %.0f - %.4f x, centre y %.1f' % (LA, -LB, LC))
+ZX0, ZX1 = 1750, 2110
+def in_zone(c):
+    return ZX0 < c.x < ZX1 and 250 < abs(c.y - LC) < 650 and c.z > _zlow[int(c.x // 50 * 50)] - 15
+moved_f = {'to lid': 0, 'to body': 0}
+for L in ('Frunk lid', 'Body shell'):
+    keep = []
+    for mtl, b in buckets.get(L, []):
+        if mtl not in PANEL_MTL:
+            keep.append((mtl, b)); continue
+        zf = [f for f in b.faces if in_zone(f.calc_center_median())]
+        if not zf:
+            keep.append((mtl, b)); continue
+        for sgn in (1, -1):                                   # vertical planes along both side edges
+            geom = list({e for f in zf if f.is_valid for e in f.edges}) + [f for f in zf if f.is_valid] + list({v for f in zf if f.is_valid for v in f.verts})
+            n = Vector((-LB * sgn, 1, 0)).normalized() * sgn
+            bmesh.ops.bisect_plane(b, geom=geom, plane_co=(0, LC + sgn * LA, 0), plane_no=n)
+            zf = [f for f in b.faces if in_zone(f.calc_center_median())]
+        def lab_of(f, L=L):
+            c = f.calc_center_median()
+            if not in_zone(c): return L
+            inside = abs(c.y - LC) < half(c.x)
+            new = 'Frunk lid' if inside else 'Body shell'
+            if new != L: moved_f['to lid' if inside else 'to body'] += 1
+            return new
+        for L2, piece in split_faces(b, lab_of).items():
+            (keep.append((mtl, piece)) if L2 == L else buckets.setdefault(L2, []).append((mtl, piece)))
+    buckets[L] = keep + [e for e in buckets.get(L, []) if e not in keep and False]
+print('lid edge trim', moved_f)
 
 reset()
 random.seed(23)
@@ -320,8 +367,8 @@ EXPLODE = {
     'Front fascia': (1350, 0, 0), 'Rear fascia': (-1350, 0, 0), 'Headlights': (1750, 0, 350), 'Tail lights': (-1750, 0, 350),
     'Front left door': (150, 1350, 500), 'Rear left door': (-250, 1350, 500), 'Front right door': (150, -1350, 500),
     'Rear right door': (-250, -1350, 500), 'Cabin interior': (0, 0, 850),
-    'Front left wheel and tyre': (250, 1150, 0), 'Front right wheel and tyre': (250, -1150, 0),
-    'Rear left wheel and tyre': (-250, 1150, 0), 'Rear right wheel and tyre': (-250, -1150, 0),
+    'Front left wheel and tire': (250, 1150, 0), 'Front right wheel and tire': (250, -1150, 0),
+    'Rear left wheel and tire': (-250, 1150, 0), 'Rear right wheel and tire': (-250, -1150, 0),
     'Left brakes': (0, 800, 0), 'Right brakes': (0, -800, 0)}
 LAMP = {
     'Headlights': {'chrome': 'Lamp chrome', 'chrome_dark': 'Lamp chrome', 'black': 'Lamp housing', 'black2': 'Lamp housing',
@@ -412,12 +459,12 @@ for k in range(6):
 for k in range(5):
     fc.add(box(14, 850, 80, 2), 'Cast aluminium', xf((1500 + k * 160, 0, 395)))
 for sy in (-1, 1):
-    for x in (1500, 1900, 2200):
-        fc.add(cyl(22, 60, 16), 'Cast aluminium', xf((x, sy * 480, 570)))
+    for x in (1500, 1800, 2040):                                      # body mounts, kept behind the fascia
+        fc.add(cyl(22, 60, 16), 'Cast aluminium', xf((x, sy * 480, 525)))
 
 rc = Part('Rear megacasting', (-1000, 0, -650))
 for sy in (-1, 1):
-    rc.add(box(960, 130, 260, 18), 'Cast aluminium', xf((-1800, sy * 500, 460)))
+    rc.add(box(860, 130, 260, 18), 'Cast aluminium', xf((-1750, sy * 500, 460)))     # rails end inside the rear fascia
     rc.add(lathe([(150, 0), (150, 40), (115, 120), (95, 340), (120, 360), (0, 360)], 32), 'Cast aluminium', xf((-AX + 60, sy * 560, 420)))
     for k in range(6):
         rc.add(box(18, 110, 240, 3), 'Cast aluminium', xf((-1380 - k * 160, sy * 405, 450)))

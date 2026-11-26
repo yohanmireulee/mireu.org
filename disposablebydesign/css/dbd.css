@@ -187,8 +187,13 @@ body.ready #dock { opacity: 1; translate: 0 0; }
 .c-label { display: flex; gap: 1rem; font: 500 0.64rem/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey); margin: 0 0 1rem; }
 .c-label span { color: var(--ink); white-space: nowrap; }
 .c-title { font: italic 400 clamp(2rem, 3.2vw, 3rem)/1.04 var(--serif); margin: 0 0 1.3rem; letter-spacing: -0.01em; }
-.c-excuse { margin: 0 0 1rem; color: var(--grey); font: italic 400 1.08rem/1.4 var(--serif); }
-.c-excuse span { display: block; font: 500 0.6rem/1 var(--mono); font-style: normal; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 0.4rem; }
+.c-fix { margin: 1.1rem 0 0; padding-top: 0.9rem; border-top: 1px solid rgb(255 255 255 / 0.14); font: italic 400 1.14rem/1.4 var(--serif); }
+.c-fix span { display: block; color: var(--grey); font: 500 0.6rem/1 var(--mono); font-style: normal; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 0.45rem; }
+.asks { list-style: none; counter-reset: ask; margin: 1.4rem 0 0; padding: 0; display: grid; gap: 0.9rem; }
+.asks li { counter-increment: ask; position: relative; padding-left: 2.4rem; font-size: clamp(0.98rem, 1.25vw, 1.1rem); line-height: 1.5; }
+.asks li::before { content: counter(ask, decimal-leading-zero); position: absolute; left: 0; top: 0.3rem; font: 500 0.66rem/1 var(--mono); letter-spacing: 0.12em; color: var(--grey); }
+.asks strong { display: block; font: italic 400 1.35rem/1.2 var(--serif); margin-bottom: 0.15rem; }
+.ch-close { margin: 1.4rem 0 0; font: italic 400 clamp(1.1rem, 1.5vw, 1.3rem)/1.45 var(--serif); }
 .c-body { margin: 0; font-size: 1.08rem; line-height: 1.6; }
 .c-body em { font-family: var(--serif); font-size: 1.08em; }
 
@@ -230,3 +235,5 @@ body.ready #dock { opacity: 1; translate: 0 0; }
   #dock .spr { --s: 2.4rem; }
   .dock-tip { display: none; }
 }
+.demands .panel { max-width: 44rem; }
+.demands .ch-text { font-size: clamp(1.02rem, 1.35vw, 1.18rem); }

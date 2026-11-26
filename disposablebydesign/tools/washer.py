@@ -275,7 +275,7 @@ for y in (-D / 2 + 40, D / 2 - 40, 0):
 for x in (-190, 190):
     base.add(box(60, 60, 20, 2), 'Galvanised steel', xf((x, 30, 55)))                   # damper mounts
 
-feet = Part('Levelling feet', (0, 0, -860))
+feet = Part('Leveling feet', (0, 0, -860))
 for x in (-W / 2 + 50, W / 2 - 50):
     for y in (-D / 2 + 60, D / 2 - 60):
         feet.add(cyl(8, 40, 12), 'Steel', xf((x, y, 10)))

@@ -182,9 +182,11 @@ async function essayPage() {
     </section>
     <section class="slide thesis"><div class="panel"><p class="thesis-t">${THESIS}</p></div></section>
     ${ESSAY.map((ch, i) => `
-      <section class="slide chapter"><div class="panel">
+      <section class="slide chapter${ch.asks ? ' demands' : ''}"><div class="panel${ch.asks ? ' scroll' : ''}">
         <p class="ch-label"><span>${NUM[i]}</span><em>${ch.label}</em></p>
         <p class="ch-text">${md(ch.text)}</p>
+        ${ch.asks ? `<ol class="asks">${ch.asks.map(([h, t]) => `<li><strong>${h}</strong> ${md(t)}</li>`).join('')}</ol>` : ''}
+        ${ch.close ? `<p class="ch-close">${md(ch.close)}</p>` : ''}
       </div></section>`).join('')}
     <section class="slide index"><div class="panel">
       <p class="ch-label"><span>${NUM[ESSAY.length]}</span><em>Five objects</em></p>
@@ -239,8 +241,8 @@ async function itemPage(item) {
       <section class="slide station"><div class="panel card">
         <p class="c-label"><span>${pad(i + 1)} / ${pad(n)}</span>${s.parts.length > 1 ? s.parts.slice(0, 3).join(', ') + (s.parts.length > 3 ? '…' : '') : s.parts[0]}</p>
         <h2 class="c-title">${md(s.title)}</h2>
-        <p class="c-excuse"><span>The excuse</span>${md(s.excuse)}</p>
         <p class="c-body">${md(s.cost)}</p>
+        <p class="c-fix"><span>The fix</span>${md(s.fix)}</p>
       </div></section>`).join('')}
     <section class="slide econ"><div class="panel scroll">
       <p class="eyebrow">Back together · ${item.name}</p>
