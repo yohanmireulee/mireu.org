@@ -32,6 +32,8 @@ mat('Chip', (0.04, 0.04, 0.045), rough=0.35)
 mat('Hose', (0.72, 0.72, 0.7), rough=0.6)
 mat('Blue plastic', (0.12, 0.3, 0.62), rough=0.45)
 mat('Black plastic', (0.03, 0.03, 0.035), rough=0.5)
+mat('Brass', (0.8, 0.62, 0.32), metal=1, rough=0.3)
+mat('Red plastic', (0.7, 0.1, 0.08), rough=0.45)
 
 Y90 = (90, 0, 0)   # lathe/cyl Z axis -> -Y (toward the front)
 
@@ -50,9 +52,7 @@ rs.add(sheet(10, D - 12, H - 18), 'Enamel', xf((W / 2 - 5, 6, (H - 18) / 2)))
 rs.add(box(4, D - 80, 30), 'Galvanised steel', xf((W / 2 - 12, 10, H - 60)))
 
 rp = Part('Rear panel', (0, 980, 0))
-rp.add(box(W - 20.4, 8, H - 30, 2), 'Galvanised steel', xf((0, D / 2 - 4.2, (H - 30) / 2 + 6)))
-for x, z in ((-200, 820), (200, 820), (0, 760)):
-    rp.add(cyl(14, 14, 16), 'Black plastic', xf((x, D / 2 + 4, z), Y90))           # hose ports, cord grommet
+rp.add(box(W - 20.4, 8, H - 24.2, 2), 'Galvanised steel', xf((0, D / 2 - 4.2, (H - 24.2) / 2 + 6)))   # top edge meets the top panel
 for i in range(6):                                                                  # stiffening pressings
     rp.add(box(W - 120, 3, 12, 1), 'Galvanised steel', xf((0, D / 2 + 1, 220 + i * 110)))
 
@@ -69,7 +69,10 @@ tk.add(slab(110, 70, 6, 10), 'White plastic', xf((W / 2 - 110, FY - 1, 60), Y90)
 
 # ------------------------------------------------------------- console + drawer
 con = Part('Control console', (0, -330, 600))
-con.add(box(W - 24, 90, 120, 6), 'Console', xf((0, FY + 50, H - 78)))
+DX, DZ, DW, DH = -W / 2 + 128, H - 73, 216, 82        # drawer opening in the console (centre x, centre z, width, height)
+_dcut = box(DW + 4, 200, DH + 4)
+bmesh.ops.translate(_dcut, vec=(DX, 0, DZ - (H - 78)), verts=_dcut.verts)
+con.add(apply_mods(box(W - 24, 90, 120, 6), [('BOOLEAN', _dcut)]), 'Console', xf((0, FY + 50, H - 78)))
 con.add(cyl(36, 26, 48, bevel=3), 'Chrome', xf((60, FY - 6, H - 78), Y90))               # cycle knob
 con.add(cyl(30, 4, 48), 'Dark chrome', xf((60, FY - 20, H - 78), Y90))
 for k in range(24):                                                                     # knob tick marks
@@ -83,12 +86,12 @@ for i in range(6):
 con.add(cyl(11, 6, 24), 'Chrome', xf((300, FY + 2, H - 78), Y90))                        # power
 
 dr = Part('Detergent drawer', (-160, -720, 640))
-dr.add(box(220, 14, 112, 5), 'White plastic', xf((-210, FY - 3, H - 80)))
-dr.add(box(150, 4, 20, 4), 'Console', xf((-210, FY - 10, H - 60)))                       # finger pull
-dr.add(box(206, 320, 90, 4), 'White plastic', xf((-210, FY + 170, H - 84)))
-for x in (-150, -45):
-    dr.add(box(4, 300, 80), 'White plastic', xf((-210 + x + 60, FY + 170, H - 80)))
-dr.add(box(60, 70, 6), 'Blue plastic', xf((-270, FY + 90, H - 50)))                    # softener cap
+dr.add(box(DW, 12, DH, 4), 'White plastic', xf((DX, FY + 10, DZ)))                       # face, 1 mm proud of the console
+dr.add(box(120, 3, 14, 3), 'Console', xf((DX, FY + 3.2, DZ + 24)))                       # finger pull
+dr.add(box(DW - 8, 300, DH - 10, 4), 'White plastic', xf((DX, FY + 166, DZ - 2)))
+for x in (-36, 36):
+    dr.add(box(4, 280, DH - 16), 'White plastic', xf((DX + x, FY + 170, DZ)))
+dr.add(box(50, 60, 6), 'Blue plastic', xf((DX - 70, FY + 90, DZ + 26)))                  # softener cap
 
 # ------------------------------------------------------------- door
 door = Part('Door', (0, -1180, 0))
@@ -239,13 +242,17 @@ val = Part('Water inlet valves', (0, 900, 380))
 for x in (-180, -120):
     val.add(box(46, 60, 46, 6), 'Black plastic', xf((x, D / 2 - 50, 880)))
     val.add(cyl(18, 50, 20), 'Black plastic', xf((x, D / 2 - 50, 925)))                     # solenoid coil
-    val.add(cyl(12, 40, 16), 'Blue plastic' if x < -150 else 'Copper', xf((x, D / 2 - 8, 880), Y90))
+    # threaded brass inlet through the rear panel, colour-ringed: cold (blue) and hot (red)
+    val.add(cyl(10, 52, 16), 'Brass', xf((x, D / 2 - 8, 880), Y90))
+    for t in range(5):
+        val.add(torus(10.4, 0.9, 16, 6), 'Brass', xf((x, D / 2 + 4 + t * 3.2, 880), Y90))
+    val.add(cyl(18, 2.4, 24), 'Blue plastic' if x < -150 else 'Red plastic', xf((x, D / 2 + 1.3, 880), Y90))
     val.add(box(14, 10, 10), 'White plastic', xf((x, D / 2 - 50, 958)))
 
 hos = Part('Hoses', (0, 560, 180))
 hos.add(pipe([(-180, D / 2 - 90, 880), (-190, 100, 900), (-210, FY + 300, 900)], 9, 10), 'Hose')
 hos.add(pipe([(-120, D / 2 - 90, 870), (-130, 120, 890), (-170, FY + 320, 895)], 9, 10), 'Hose')
-hos.add(pipe([(PX - 40, PY + 80, PZ), (200, 200, 120), (200, D / 2 - 40, 400), (200, D / 2 - 30, 800)], 13, 12), 'Hose')
+hos.add(pipe([(PX - 40, PY + 80, PZ), (200, 200, 120), (200, D / 2 - 40, 400), (200, D / 2 - 12, 820)], 13, 12), 'Hose')
 hos.add(pipe([(-210, FY + 300, 880), (-120, FY + 300, 840), (0, TF + 40, CZ + 260)], 20, 12), 'Rubber')   # drawer to tub
 
 # ------------------------------------------------------------- brains
@@ -289,14 +296,11 @@ door.add(torus(206, 4, 96, 8), 'Black rubber', xf((0, FY + 2, CZ), Y90))
 door.add(box(16, 8, 210, 4), 'Black plastic', xf((-270, FY - 4, CZ)))
 door.add(box(24, 6, 60, 6), 'Black plastic', xf((262, FY - 66, CZ)))
 # drawer: compartment labels as tiny raised marks
-for i, x in enumerate((-280, -230, -170)):
-    dr.add(box(18, 1, 6, 1), 'White plastic', xf((x, FY - 10, H - 46)))
+for x in (-60, 0, 60):
+    dr.add(box(18, 1, 5, 1), 'Console', xf((DX + x, FY + 3.6, DZ - 26)))
 # rear: power cord with plug, hose ports labelled hot/cold, vent slots, transport bolts
-cord = [(60, D / 2 + 10, 760), (90, D / 2 + 60, 700), (140, D / 2 + 90, 520), (170, D / 2 + 110, 300), (200, D / 2 + 140, 160)]
-rp.add(pipe(cord, 4, 8), 'Black plastic')
-rp.add(box(30, 26, 40, 6), 'Black plastic', xf((200, D / 2 + 150, 130)))
-rp.add(cyl(16, 6, 16), 'Blue plastic', xf((-200, D / 2 + 8, 820), Y90))
-rp.add(cyl(16, 6, 16), 'Black rubber', xf((200, D / 2 + 8, 820), Y90))
+rp.add(cyl(17, 24, 24), 'Black rubber', xf((200, D / 2 + 6, 820), Y90))                 # drain outlet
+rp.add(torus(17.5, 2, 24, 6), 'Steel', xf((200, D / 2 + 12, 820), Y90))                   # hose clamp
 for i in range(8):
     rp.add(box(40, 2, 6, 1), 'Black plastic', xf((-210 + i * 60, D / 2 + 1, 930)))
 for x, z in ((-250, 300), (250, 300), (-250, 700), (250, 700)):

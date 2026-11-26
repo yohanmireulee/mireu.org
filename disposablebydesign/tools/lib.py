@@ -484,7 +484,34 @@ def rotate_normals(bm, Mx):
                 lp[lx], lp[ly], lp[lz] = n.x, n.y, n.z
 
 
-def grab(obj, M=None, ratio=1.0, weld=0.0, transfer=None, smooth_src=40):
+LOOP_MAP = 'POLYINTERP_NEAREST'
+
+
+def hi_samples(obj, M=None, weld=0.0):
+    """Dense-surface samples of an object (face centres, unit normals, areas) in final coordinates, for the
+    spatial normal filter. Pool several objects' samples when one surface is split across objects."""
+    import numpy as np
+    ob = bpy.data.objects[obj] if isinstance(obj, str) else obj
+    w = None
+    if weld:
+        w = ob.modifiers.new('_w', 'WELD'); w.merge_threshold = weld
+    _hm = bpy.data.meshes.new_from_object(ob.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+    if w is not None:
+        ob.modifiers.remove(w)
+    nP = len(_hm.polygons)
+    C = np.zeros(nP * 3); _hm.polygons.foreach_get('center', C); C = C.reshape(-1, 3)
+    N = np.zeros(nP * 3); _hm.polygons.foreach_get('normal', N); N = N.reshape(-1, 3)
+    A = np.zeros(nP); _hm.polygons.foreach_get('area', A)
+    bpy.data.meshes.remove(_hm)
+    W = (M if M is not None else Matrix()) @ ob.matrix_world
+    R3 = np.array(W.to_3x3())
+    sc = (abs(np.linalg.det(R3))) ** (1 / 3)
+    C = C @ R3.T + np.array(W.translation)
+    N = N @ (R3 / sc).T; N /= np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-12)
+    return C, N, A * sc * sc
+
+
+def grab(obj, M=None, ratio=1.0, weld=0.0, transfer=None, smooth_src=40, relax=0, blur=0.0, blur_angle=35, blur_pool=None):
     """Copy an object's mesh (world space, optionally welded and decimated) into a free bmesh, then apply M.
 
     When the mesh is decimated, the high-resolution surface's shading normals are transferred onto the
@@ -493,6 +520,8 @@ def grab(obj, M=None, ratio=1.0, weld=0.0, transfer=None, smooth_src=40):
     ob = bpy.data.objects[obj] if isinstance(obj, str) else obj
     if transfer is None:
         transfer = ratio < 1.0
+    if blur > 0:
+        transfer = False                       # the spatial filter below replaces the normal transfer
     coll = bpy.context.scene.collection
     dg = bpy.context.evaluated_depsgraph_get
     mods = []
@@ -513,7 +542,23 @@ def grab(obj, M=None, ratio=1.0, weld=0.0, transfer=None, smooth_src=40):
         hi = bpy.data.objects.new('_hi', hi_me); coll.objects.link(hi); hi.matrix_world = ob.matrix_world
         # area-and-angle weighting keeps big flat faces flat where they meet fillets (CAD meshes are full
         # of long fan triangles that otherwise smear the fillet's normal across the whole face)
+        if relax:
+            # iron out tessellation ripples in the dense surface before its normals are read (only the
+            # normals are transferred, so the low-res copy keeps its true shape)
+            # open edges and creases stay pinned, or they shrink away and the transfer picks up stray normals
+            _b = bmesh.new(); _b.from_mesh(hi_me)
+            pinned = set()
+            for e in _b.edges:
+                if e.is_boundary or not e.smooth or len(e.link_faces) != 2:
+                    pinned.add(e.verts[0].index); pinned.add(e.verts[1].index)
+            _b.free()
+            vg = hi.vertex_groups.new(name='_relax')
+            vg.add([i for i in range(len(hi_me.vertices)) if i not in pinned], 1.0, 'REPLACE')
+            sm = hi.modifiers.new('_sm', 'SMOOTH'); sm.factor = 0.5; sm.iterations = relax; sm.vertex_group = '_relax'
         wn = hi.modifiers.new('_wn', 'WEIGHTED_NORMAL'); wn.mode = 'FACE_AREA_WITH_ANGLE'; wn.keep_sharp = True; wn.weight = 100
+    hiC = None
+    if blur > 0:
+        hiC, hiN, hiA = blur_pool if blur_pool is not None else hi_samples(ob, M, None)
     if ratio < 1.0:
         d = ob.modifiers.new('_d', 'DECIMATE'); d.ratio = ratio; d.use_collapse_triangulate = True; mods.append(d)
     lo_me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg()))
@@ -524,7 +569,7 @@ def grab(obj, M=None, ratio=1.0, weld=0.0, transfer=None, smooth_src=40):
         lo = bpy.data.objects.new('_lo', lo_me); coll.objects.link(lo); lo.matrix_world = ob.matrix_world
         dt = lo.modifiers.new('_t', 'DATA_TRANSFER')
         dt.object = hi; dt.use_object_transform = True
-        dt.use_loop_data = True; dt.data_types_loops = {'CUSTOM_NORMAL'}; dt.loop_mapping = 'POLYINTERP_NEAREST'
+        dt.use_loop_data = True; dt.data_types_loops = {'CUSTOM_NORMAL'}; dt.loop_mapping = LOOP_MAP
         ev = lo.evaluated_get(dg())
         em = ev.to_mesh()
         normals = [tuple(c.vector) for c in em.corner_normals]
@@ -547,7 +592,82 @@ def grab(obj, M=None, ratio=1.0, weld=0.0, transfer=None, smooth_src=40):
     if M is not None:
         bmesh.ops.transform(bm, matrix=M, verts=bm.verts)
         rotate_normals(bm, M)
+    if hiC is not None:
+        _blur_normals(bm, hiC, hiN, hiA, blur, math.cos(math.radians(blur_angle)))
     return bm
+
+
+def _blur_normals(bm, C, N, A, r, cos_t, chunk=20000):
+    """Shading normals from the dense surface, independent of its topology: each corner of the low-res
+    mesh takes the area- and distance-weighted average normal of the dense faces within r of its vertex,
+    counting only faces that face within the crease angle of the corner's own face (so creases stay sharp,
+    and unwelded seams or panel ripples in the source no longer show)."""
+    import numpy as np
+    from scipy.spatial import cKDTree
+    tree = cKDTree(C)
+    bm.verts.ensure_lookup_table(); bm.normal_update()
+    lx, ly, lz = _ensure_nlayers(bm)               # (adding layers invalidates loop references: do it first)
+    V = np.array([v.co[:] for v in bm.verts])
+    loops = [(lp, lp.vert.index, f.normal) for f in bm.faces for lp in f.loops]
+    LV = np.array([l[1] for l in loops]); LF = np.array([l[2][:] for l in loops])
+    # reference direction per corner: the vertex's smooth normal (winding-agnostic) wherever the corner's
+    # face lies within the crease angle of it, so all smooth corners of a vertex come out identical and
+    # stay one vertex in the export; corners across a crease keep their own face's direction
+    VN = np.zeros((len(V), 3))
+    first = np.full(len(V), -1)
+    for k, (lp, vi, fn) in enumerate(loops):
+        if first[vi] < 0: first[vi] = k
+    sgn = np.sign(np.einsum('ij,ij->i', LF, LF[first[LV]])); sgn[sgn == 0] = 1
+    for k in range(3):
+        VN[:, k] = np.bincount(LV, weights=LF[:, k] * sgn, minlength=len(V))
+    VN /= np.maximum(np.linalg.norm(VN, axis=1, keepdims=True), 1e-12)
+    vr = VN[LV]; d = np.einsum('ij,ij->i', vr, LF)
+    smooth = np.abs(d) > math.cos(math.radians(30))
+    LF = np.where(smooth[:, None], vr * np.sign(d)[:, None], LF)
+    out = np.zeros((len(loops), 3))
+    K = 48                                              # nearest dense faces per vertex (adapts to density)
+    for s0 in range(0, len(loops), chunk):
+        lv = LV[s0:s0 + chunk]; lf = LF[s0:s0 + chunk]
+        uv, inv = np.unique(lv, return_inverse=True)
+        dist, idx = tree.query(V[uv], k=min(K, len(C)), distance_upper_bound=max(r * 5, 60.0))
+        dist = np.atleast_2d(dist); idx = np.atleast_2d(idx)
+        ok = np.isfinite(dist)
+        # kernel width: at least r, wider where the dense mesh is sparse
+        far = np.where(ok, dist, 0).max(1)
+        sig2v = np.maximum(r, far * 0.6) ** 2
+        rows = np.repeat(np.arange(len(lv)), idx.shape[1])
+        cols = idx[inv].ravel(); good = ok[inv].ravel()
+        rows, cols = rows[good], cols[good]
+        dd = dist[inv].ravel()[good]
+        dn = np.einsum('ij,ij->i', N[cols], lf[rows])
+        # the source mixes face windings: line every dense normal up with the corner's face before averaging
+        sg = np.sign(dn); sg[sg == 0] = 1
+        w = A[cols] * np.exp(-dd ** 2 / sig2v[inv][rows]) * (np.abs(dn) > cos_t) * sg
+        acc = np.stack([np.bincount(rows, weights=N[cols, k] * w, minlength=len(lv)) for k in range(3)], 1)
+        ln = np.linalg.norm(acc, axis=1)
+        bad = ln < 1e-9
+        acc[bad] = lf[bad]; ln[bad] = 1
+        avg = acc / ln[:, None]
+        # Plane fit through the dense face centres around each corner. The source surfaces are stair-stepped
+        # in places (quantised positions): averaging their normals keeps the steps, a plane fit through the
+        # step corners recovers the true slope.
+        wa = np.abs(w)
+        W0 = np.bincount(rows, weights=wa, minlength=len(lv)) + 1e-12
+        P = C[cols]
+        mu = np.stack([np.bincount(rows, weights=P[:, k] * wa, minlength=len(lv)) for k in range(3)], 1) / W0[:, None]
+        Dp = P - mu[rows]
+        cov = np.zeros((len(lv), 3, 3))
+        for i in range(3):
+            for j in range(i, 3):
+                cov[:, i, j] = cov[:, j, i] = np.bincount(rows, weights=Dp[:, i] * Dp[:, j] * wa, minlength=len(lv)) / W0
+        ev, evec = np.linalg.eigh(cov)
+        nrm = evec[:, :, 0]
+        nrm *= np.sign(np.einsum('ij,ij->i', nrm, avg))[:, None]
+        cnt = np.bincount(rows, weights=(wa > 0).astype(float), minlength=len(lv))
+        planar = (ev[:, 0] < 0.25 * ev[:, 1]) & (cnt >= 6) & (np.einsum('ij,ij->i', nrm, avg) > 0.8)
+        out[s0:s0 + chunk] = np.where(planar[:, None], nrm, avg)
+    for (lp, _, _), n in zip(loops, out):
+        lp[lx], lp[ly], lp[lz] = float(n[0]), float(n[1]), float(n[2])
 
 
 def tris(bm):
@@ -570,6 +690,37 @@ def islands(bm):
                     seen.add(y.index); stack.append(y)
         out.append(comp)
     return out
+
+
+def split_faces(bm, label_of):
+    """One pass: split a bmesh into {label: bmesh} by a per-face label function, keeping the nx/ny/nz loop
+    layers (much faster than one subset() per island on big meshes)."""
+    src = [bm.loops.layers.float.get(k) for k in ('nx', 'ny', 'nz')]
+    has_n = all(src)
+    outs = {}
+    for f in bm.faces:
+        L = label_of(f)
+        if L is None:
+            continue
+        if L not in outs:
+            nb = bmesh.new()
+            outs[L] = (nb, {}, _ensure_nlayers(nb) if has_n else None)
+        nb, vm, dst = outs[L]
+        vs = []
+        for v in f.verts:
+            nv = vm.get(v.index)
+            if nv is None:
+                nv = nb.verts.new(v.co); vm[v.index] = nv
+            vs.append(nv)
+        try:
+            nf = nb.faces.new(vs)
+        except ValueError:
+            continue
+        nf.smooth = f.smooth
+        if has_n:
+            for a, b in zip(f.loops, nf.loops):
+                b[dst[0]], b[dst[1]], b[dst[2]] = a[src[0]], a[src[1]], a[src[2]]
+    return {L: v[0] for L, v in outs.items()}
 
 
 def subset(bm, keep_fn):

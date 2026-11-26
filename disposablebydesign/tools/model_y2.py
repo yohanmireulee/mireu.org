@@ -19,7 +19,8 @@ AX, TR, WR = 1436, 771, 372
 RATIO = {'tires': 0.07, 'wheels': 0.08, 'calipers': 0.07, 'calipers2': 0.3, 'brakedsk': 0.12, 'chrome_rear_lights': 0.04,
          'interior': 0.1, 'body': 0.65, 'fenders': 0.25, 'glass_lights': 0.07, 'chrome': 0.1, 'black2': 0.08, 'black': 0.3,
          'chrome_rear_2': 0.08, 'glass_body': 0.5, 'metal': 0.4, 'alum': 0.5, 'chrome_dark': 0.3, 'glass_front_lights': 0.5}
-DROP = {'91', '66', '60', '50', '04', '05', '18', '19', '23', '25', '02', '03', '22', '24'}                             # badges and logos (50 is the T-shaped fender badge)
+DROP = {'91', '66', '60', '04', '05', '18', '19', '23', '25', '02', '03', '22', '24'}                                    # badges and logos
+REPEATER = '50'                    # fender camera housings: kept, with the engraved T filled in
 TAIL = {'34', '35', '38', '39', '40', '61', '62', '63', '64', '65', '67', '94', '95', '96'}
 HEAD = {'57', '58', '59', '68', '69', '70', '71', '72', '73', '74', '77', '78', '79', '81', '82', '84', '86', '87', '89', '99', '100'}
 FFASCIA = {'52', '53', '76'}
@@ -31,6 +32,67 @@ INTERIOR = {'41', '42', '43', '45', '49', '54', '83'}
 buckets = {}
 def put(part, mtl, bm):
     buckets.setdefault(part, []).append((mtl, bm))
+
+DEFER = []                         # (mtl, bm, [(vertex-index list, label)]) — labelled per island, split at the end
+def defer(mtl, bm, labelled):
+    DEFER.append((mtl, bm, labelled))
+
+
+def delogo(bm):
+    """Replace the fender camera housings (they carry an engraved T) with clean gloss-black covers of the
+    same outline and crown: the outline is the housing's side-view hull, the height at each point is the
+    housing's outer surface sampled around it (wide enough to step over the engraving), then relaxed."""
+    import numpy as np
+    from scipy.spatial import ConvexHull, Delaunay
+    from mathutils.kdtree import KDTree
+    out = bmesh.new()
+    for side in (1, -1):
+        P = np.array([(v.co.x, v.co.z, abs(v.co.y)) for v in bm.verts if v.co.y * side > 0])
+        h = ConvexHull(P[:, :2]); poly = P[h.vertices, :2]
+        cen = poly.mean(0); poly = cen + (poly - cen) * 0.985
+        pts = []
+        for i in range(len(poly)):                                       # densified outline
+            a_, b_ = poly[i], poly[(i + 1) % len(poly)]
+            n = max(1, int(np.linalg.norm(b_ - a_) / 3))
+            pts += [a_ + (b_ - a_) * t / n for t in range(n)]
+        nb = len(pts)
+        tri0 = Delaunay(poly)
+        xs = np.arange(P[:, 0].min(), P[:, 0].max(), 3.0); zs = np.arange(P[:, 1].min(), P[:, 1].max(), 3.0)
+        for x in xs:
+            for z in zs:
+                if tri0.find_simplex([x, z]) >= 0 and min(np.linalg.norm(np.array(pts) - (x, z), axis=1)) > 1.5:
+                    pts.append(np.array([x, z]))
+        pts = np.array(pts)
+        kd = KDTree(len(P))
+        for i, p_ in enumerate(P): kd.insert((p_[0], p_[1], 0), i)
+        kd.balance()
+        # outline heights: the housing's outer edge, smoothed along the loop
+        Hb = np.array([max([P[j][2] for _, j, _ in kd.find_range((x, z, 0), 4.0)] or [P[kd.find((x, z, 0))[1]][2]]) for x, z in pts[:nb]])
+        for _ in range(20):
+            Hb = 0.5 * Hb + 0.25 * (np.roll(Hb, 1) + np.roll(Hb, -1))
+        D = Delaunay(pts)
+        nbr = [set() for _ in pts]
+        for t in D.simplices:
+            for i in range(3):
+                nbr[t[i]].update((t[(i + 1) % 3], t[(i + 2) % 3]))
+        nbr = [list(n) for n in nbr]
+        # interior: a smooth dome spanning the outline (Poisson solve, outline fixed), crowned ~3 mm
+        H = np.concatenate([Hb, np.full(len(pts) - nb, Hb.mean())])
+        for _ in range(600):
+            H[nb:] = np.array([H[nbr[i]].mean() for i in range(nb, len(pts))]) + 0.035
+        top = [out.verts.new((x, side * y, z)) for (x, z), y in zip(pts, H)]
+        low = [out.verts.new((x, side * (y - 8), z)) for (x, z), y in zip(pts[:nb], H[:nb])]
+        for t in D.simplices:
+            f = out.faces.new([top[i] for i in t])
+            if f.calc_center_median().y * side > 0 and f.normal.y * side < 0: f.normal_flip()
+            f.normal_update()
+            if f.normal.y * side < 0: f.normal_flip()
+        for i in range(nb):                                                 # skirt down into the fender
+            j = (i + 1) % nb
+            out.faces.new([top[i], top[j], low[j], low[i]])
+    out.normal_update()
+    print('repeater covers', len(out.faces))
+    return out
 
 def centre(bm, comp=None):
     vs = [bm.verts[i].co for i in comp] if comp is not None else [v.co for v in bm.verts]
@@ -61,11 +123,26 @@ def body_region(mn, mx):
         return 'Liftgate'
     return 'Body shell'
 
+# Shading. The source splits one surface across several objects in an interlocking checkerboard, so each
+# object's normals have to be read from the whole surface: pool the dense samples per material and let
+# every decimated piece take its normals from the pool (see lib.grab / _blur_normals).
+import numpy as np
+_pool = {}
+for o in [o for o in bpy.data.objects if o.type == 'MESH']:
+    if o.name.split('_')[0] in DROP:
+        continue
+    _pool.setdefault(o.data.materials[0].name if o.data.materials else 'black', []).append(hi_samples(o, M, 0.0005))
+POOL = {k: tuple(np.concatenate([p[i] for p in v]) for i in range(3)) for k, v in _pool.items()}
+del _pool
+
 for o in [o for o in bpy.data.objects if o.type == 'MESH']:
     num, mtl = o.name.split('_')[0], o.data.materials[0].name if o.data.materials else 'black'
     if num in DROP:
         continue
-    bm = grab(o, M, ratio=RATIO.get(mtl, 0.3), weld=0.0005)
+    if num == REPEATER:
+        bm = grab(o, M, ratio=1.0, weld=0.0005, transfer=False)
+        put('Body shell', 'black', delogo(bm)); continue
+    bm = grab(o, M, ratio=RATIO.get(mtl, 0.3), weld=0.0005, blur=20, blur_pool=POOL[mtl])
     if not bm.verts:
         continue
     bm.verts.ensure_lookup_table()
@@ -82,39 +159,122 @@ for o in [o for o in bpy.data.objects if o.type == 'MESH']:
     if num in WINDSHIELD: put('Glass roof and windows', mtl, bm); continue
     if num in INTERIOR: put('Cabin interior', mtl, bm); continue
     if num in MIRROR:
+        lab = []
         for comp in islands(bm):
             a, b = centre(bm, comp)
-            put('Front left door' if (a.y + b.y) > 0 else 'Front right door', mtl, piece(bm, comp))
-        continue
+            lab.append((comp, 'Front left door' if (a.y + b.y) > 0 else 'Front right door'))
+        defer(mtl, bm, lab); continue
     if num == '98':                                         # the four doors
+        lab = []
         for comp in islands(bm):
             a, b = centre(bm, comp)
-            put(door_of(a, b) or 'Body shell', mtl, piece(bm, comp))
-        continue
+            lab.append((comp, door_of(a, b) or 'Body shell'))
+        defer(mtl, bm, lab); continue
     if mtl in ('glass_body', 'metal') or num == '102':     # side glass and window frames ride with their doors
+        lab = []
         for comp in islands(bm):
             a, b = centre(bm, comp)
             d = door_of(a, b) if (b.z > 900 and mtl != 'glass_body' or (mtl == 'glass_body' and a.z < 1150)) else None
             if mtl == 'glass_body' and (a.x + b.x) / 2 < -1450:
                 d = 'Liftgate'
-            put(d or 'Glass roof and windows' if mtl == 'glass_body' else d or 'Body shell', mtl, piece(bm, comp))
-        continue
+            lab.append((comp, d or 'Glass roof and windows' if mtl == 'glass_body' else d or 'Body shell'))
+        defer(mtl, bm, lab); continue
     if mtl in ('body', 'fenders', 'black', 'black2', 'chrome', 'chrome_dark'):
-        isl = islands(bm)
-        if len(isl) == 1:
-            put(body_region(mn, mx), mtl, bm); continue
-        groups = {}
-        for comp in isl:
+        lab = []
+        for comp in islands(bm):
             a, b = centre(bm, comp)
-            groups.setdefault(body_region(a, b), []).extend(comp)
-        for region, comp in groups.items():
-            put(region, mtl, piece(bm, comp))
-        continue
+            lab.append((comp, body_region(a, b)))
+        defer(mtl, bm, lab); continue
     put('Body shell', mtl, bm)
+
+# ---- fragments follow the panel they sit on -------------------------------------------------------------
+# The source surfaces break into hundreds of small islands. Labelling each by its own bounding box left
+# bits of the liftgate, frunk lid and door handles behind on the body. Instead, every small panel island is
+# projected onto the big panels (from behind for the liftgate, from above for the frunk lid, from the side
+# for the doors) and goes with the one it lies on.
+import os
+DEBUG = os.environ.get('DBG')
+from mathutils.bvhtree import BVHTree
+PANEL_MTL = ('body', 'fenders', 'black', 'black2', 'chrome', 'chrome_dark')
+SEED = 800
+MOVERS = [('Front left door', (0, -1, 0)), ('Rear left door', (0, -1, 0)), ('Front right door', (0, 1, 0)),
+          ('Rear right door', (0, 1, 0)), ('Liftgate', (1, 0, 0)), ('Frunk lid', (0, 0, -1))]
+seed_geo = {L: ([], []) for L, _ in MOVERS}
+seed_geo['Body shell'] = ([], [])
+def add_seed(L, cos, faces):
+    vs, ps = seed_geo[L]; o = len(vs); vs.extend(cos); ps.extend([[o + i for i in f] for f in faces])
+for mtl, bm, lab in DEFER:
+    bm.verts.ensure_lookup_table(); bm.faces.ensure_lookup_table()
+    for comp, L in lab:
+        if L in seed_geo and len(comp) >= SEED and (L != 'Body shell' or mtl in PANEL_MTL):
+            keep = set(comp); idx = {}
+            fs = [f for f in bm.faces if f.verts[0].index in keep]
+            cos = []
+            for f in fs:
+                for v in f.verts:
+                    if v.index not in idx: idx[v.index] = len(cos); cos.append(v.co.copy())
+            add_seed(L, cos, [[idx[v.index] for v in f.verts] for f in fs])
+for L in ('Liftgate', 'Frunk lid'):                       # glass already filed there counts as panel too
+    for mtl, bm in buckets.get(L, []):
+        add_seed(L, [v.co.copy() for v in bm.verts], [[v.index for v in f.verts] for f in bm.faces])
+trees = {L: BVHTree.FromPolygons(vs, ps) for L, (vs, ps) in seed_geo.items() if ps}
+def lies_on(L, d, cos):
+    """True when most of the points sit on or just under panel L, seen along d. Rays that slip through a
+    small hole in the panel (where a badge was) count if the rays around them land."""
+    t = trees.get(L)
+    if t is None: return False
+    d = Vector(d)
+    u = Vector((0, 0, 1)) if abs(d.z) < 0.5 else Vector((1, 0, 0)); w = d.cross(u)
+    ok = 0
+    for c in cos:
+        hit = t.ray_cast(c - d * 6000, d, 12000)[0]
+        if hit is None:
+            ring = [t.ray_cast(c + o * 30 - d * 6000, d, 12000)[0] for o in (u, -u, w, -w)]
+            ring = [h for h in ring if h is not None]
+            if len(ring) >= 3 and -10 <= (c - sum(ring, Vector()) / len(ring)).dot(d) <= 150: ok += 1
+        elif -10 <= (c - hit).dot(d) <= 150: ok += 1
+    return ok >= 0.6 * len(cos)
+moved = {}
+for mtl, bm, lab in DEFER:
+    if mtl not in PANEL_MTL: continue
+    for i, (comp, L) in enumerate(lab):
+        if len(comp) >= SEED or L not in ('Body shell', 'Liftgate', 'Frunk lid', 'Front fascia', 'Rear fascia') + tuple(m for m, _ in MOVERS): continue
+        step = max(1, len(comp) // 24)
+        cos = [bm.verts[j].co for j in comp[::step]]
+        if L in ('Front fascia', 'Rear fascia'):          # fascia bits only move if they lie on a lid
+            new = 'Frunk lid' if L == 'Front fascia' and lies_on('Frunk lid', (0, 0, -1), cos) else \
+                  'Liftgate' if L == 'Rear fascia' and lies_on('Liftgate', (1, 0, 0), cos) else None
+            if new:
+                lab[i] = (comp, new); moved[(L, new)] = moved.get((L, new), 0) + 1
+            continue
+        new = next((M_ for M_, d in MOVERS if lies_on(M_, d, cos)), None)
+        if new is None:
+            # fills a hole in a big panel (badge cut-outs, decimation seams): goes with the panel it sits
+            # closest to, on average over its points
+            near = {}
+            for M_, tr in trees.items():
+                dd = [tr.find_nearest(c)[3] for c in cos]
+                near[M_] = sum(x if x is not None else 1e9 for x in dd) / len(dd)
+            M_ = min(near, key=near.get)
+            if near[M_] < 25: new = M_
+            if DEBUG:
+                a_, b_ = centre(bm, comp); c_ = (a_ + b_) / 2
+                if c_.x < -1700 and c_.z > 780 and abs(c_.y) < 760:
+                    print('DBG', len(comp), [round(q) for q in a_], [round(q) for q in b_], {k: round(v) for k, v in near.items() if k in ('Liftgate', 'Body shell')}, '->', new)
+        if new is None and L in ('Liftgate', 'Frunk lid'): new = 'Body shell'
+        if new and new != L:
+            lab[i] = (comp, new); moved[(L, new)] = moved.get((L, new), 0) + 1
+print('fragments moved', moved)
+for mtl, bm, lab in DEFER:
+    vlab = {}
+    for comp, L in lab:
+        for j in comp: vlab[j] = L
+    for L, piece_bm in split_faces(bm, lambda f: vlab.get(f.verts[0].index)).items():
+        put(L, mtl, piece_bm)
 
 reset()
 random.seed(23)
-mat('Paint', (0.34, 0.35, 0.37), metal=0.7, rough=0.26, coat=1.0)    # stealth-ish grey
+mat('Paint', (0.34, 0.35, 0.37), metal=0.65, rough=0.3, coat=0.6)    # stealth-ish grey
 mat('Gloss black', (0.02, 0.02, 0.022), rough=0.15, coat=1.0)
 mat('Matte black', (0.035, 0.035, 0.04), rough=0.75)
 mat('Glass', (0.015, 0.02, 0.025), rough=0.03, alpha=0.82, coat=1.0)
@@ -354,7 +514,7 @@ hv = Part('High-voltage cabling and charge port', (-300, 950, -250))
 for sy in (-1, 1):
     hv.add(pipe([(PX1 + 10, sy * 220, PZ + 110), (PX1 + 200, sy * 200, 300), (AX - 80, sy * 100, 600), (AX + 70, 60, WR + 280)], 16, 10), 'HV cable')
     hv.add(pipe([(PX0 - 10, sy * 200, PZ + 110), (PX0 - 200, sy * 150, 300), (-AX + 120, sy * 60, WR + 300)], 16, 10), 'HV cable')
-hv.add(pipe([(-1900, 820, 880), (-1700, 680, 700), (-1300, 600, 400), (PX0 + 20, 600, PZ + 120)], 14, 10), 'HV cable')
-hv.add(box(80, 40, 90, 14), 'Plastic', xf((-1910, 820, 890)))
+hv.add(pipe([(-1900, 715, 880), (-1700, 640, 700), (-1300, 600, 400), (PX0 + 20, 600, PZ + 120)], 14, 10), 'HV cable')
+hv.add(box(80, 40, 90, 14), 'Plastic', xf((-1900, 720, 885)))       # charge inlet, behind the left tail lamp (skin is at y~790 here)
 
 export('/home/claude/dbd/build/raw/model_y.glb')

@@ -32,6 +32,14 @@ def cut(bm, z, keep_above):
 
 bottom = cut(base, SEAM, False)
 top = cut(base, SEAM, True)
+from mathutils.bvhtree import BVHTree as _BVH
+_bt = _BVH.FromBMesh(bottom)
+def under(x, y):
+    """height of the bottom case's outer skin at (x, y)"""
+    # the floor is a single surface in the CAD export; the rubber feet sit in openings at the corners
+    up = _bt.ray_cast(Vector((x, y, -20)), Vector((0, 0, 1)), 40)[0]
+    assert up is not None, (x, y)
+    return up.z
 base.free()
 feet = [grab(P + 'RUBBER_FOOT' + s, M) for s in ('', ' (1)', ' (2)', ' (3)')]
 keys = [grab(o, M, ratio=0.06, transfer=False) for o in bpy.data.objects if o.name.startswith(P + 'KEYBOARD_2')]
@@ -175,9 +183,10 @@ tp.add(box(40, 6, 0.2), 'Polyimide flex', xf((0, -18, 4.6)))
 
 # ---------------- internals, bottom up (z between the seam and the deck)
 ps = Part('Pentalobe screws', (0, 0, -95))
-for x, y in ((-W / 2 + 8, Y1 - 10), (W / 2 - 8, Y1 - 10), (-W / 2 + 8, Y0 + 9), (W / 2 - 8, Y0 + 9),
-             (-60, Y1 - 10), (60, Y1 - 10), (-W / 2 + 8, CY), (W / 2 - 8, CY), (-60, Y0 + 9), (60, Y0 + 9)):
-    ps.add(screw(3.0, 1.6, 0.8), 'Steel', xf((x, y, 0.55 + 1.5 + 0.88), rot=(180, 0, 0)))
+for x, y in ((-W / 2 + 28, Y1 - 13), (W / 2 - 28, Y1 - 13), (-W / 2 + 28, Y0 + 12), (W / 2 - 28, Y0 + 12),
+             (-60, Y1 - 13), (60, Y1 - 13), (-W / 2 + 12, CY), (W / 2 - 12, CY), (-60, Y0 + 12), (60, Y0 + 12)):
+    # head flush with the skin directly under it (the case curves up toward its edges)
+    ps.add(screw(3.0, 1.6, 0.8), 'Steel', xf((x, y, under(x, y) + 0.02 + 1.5 + 0.88), rot=(180, 0, 0)))
 
 cells = Part('Battery cells', (0, -6, -34))
 for x, w in ((-92, 78), (0, 86), (92, 78)):
@@ -245,10 +254,10 @@ for sx in (-1, 1):
 pb = Part('Port boards', (0, 0, 0))
 for p in ports:
     pb.add(p, 'Steel')
-pb.add(box(10, 40, 0.9, 0.5), 'PCB', xf((W / 2 - 9, 74, SEAM + 1.0)))
-pb.add(box(10, 18, 0.9, 0.5), 'PCB', xf((-W / 2 + 9, 83, SEAM + 1.0)))
-pb.add(box(40, 6, 0.2), 'Polyimide flex', xf((W / 2 - 32, 74, SEAM + 1.6)))
-pb.add(box(40, 6, 0.2), 'Polyimide flex', xf((-W / 2 + 32, 83, SEAM + 1.6)))
+pb.add(box(10, 40, 0.9, 0.5), 'PCB', xf((W / 2 - 15, 70, SEAM + 1.4)))
+pb.add(box(10, 18, 0.9, 0.5), 'PCB', xf((-W / 2 + 15, 80, SEAM + 1.4)))
+pb.add(box(40, 6, 0.2), 'Polyimide flex', xf((W / 2 - 38, 70, SEAM + 2.0)))
+pb.add(box(40, 6, 0.2), 'Polyimide flex', xf((-W / 2 + 38, 80, SEAM + 2.0)))
 
 kf = Part('Keyboard and trackpad flex', (0, 6, 12))
 kf.add(box(60, 10, 0.2), 'Polyimide flex', xf((30, 40, SEAM + 3.8)))
