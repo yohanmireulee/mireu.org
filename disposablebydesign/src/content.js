@@ -1,0 +1,368 @@
+// All the words on the site. *asterisks* become italics.
+
+export const ESSAY = [
+  {
+    label: 'The deadline',
+    paras: [
+      `In the winter of 1924, the men who made the world's lightbulbs met in Geneva and agreed that their bulbs were lasting too long. A good bulb of the day burned for somewhere between 1,500 and 2,000 hours. The Phoebus cartel set a new standard: *a thousand.* Factories that shipped bulbs which outlived it paid fines. The arrangement held for about fifteen years, until a war broke it up.`,
+      `What makes the story famous is that it took a conspiracy. Shortening the life of a product needed a room full of executives, a signed agreement and a system of penalties. A century later nobody needs the room. The decision is made quietly, in CAD, by people who know exactly which part will fail first, and it is enforced by things that look perfectly innocent: a bead of adhesive, a screw head nobody sells a driver for, a chip soldered where a socket used to be, two halves of plastic welded into one.`,
+    ],
+  },
+  {
+    label: 'The alibi',
+    paras: [
+      `Every one of these choices arrives with an excellent reason. Glue makes a phone thinner and keeps the water out. Soldered memory is faster. A welded tub is cheaper to build and has no gasket to leak. A single enormous casting replaces seventy stamped parts and the robots that joined them. None of it is false. It is just never the whole sentence, and the rest of the sentence goes: *and when this wears out, the cheapest fix will be a new one.*`,
+      `Things break. That part is physics, not malice. Batteries are chemistry and chemistry ages; bearings are steel and steel wears. The design question was never whether a part would fail. It was what happens on the day it does: whether the object opens, whether the part can be bought, and whether anyone outside the company is allowed to put it in.`,
+    ],
+  },
+  {
+    label: 'Paying twice',
+    paras: [
+      `We pay for disposability twice. First at the counter, where a repair is priced so close to a replacement that only stubbornness chooses it. Then again in a ledger nobody hands us, kept by mines, factories and landfills.`,
+      `In 2022 the world threw away 62 million tonnes of electronics, and only 22.3 percent of it was documented as properly collected and recycled. The pile is on course for 82 million tonnes by 2030. Everything in it came out of the ground somewhere. In 2016 Amnesty International documented children as young as seven working in cobalt mines in the Democratic Republic of the Congo, which supplies most of the world's cobalt, the same metal that sits in the batteries on these pages. For a phone, most of the carbon it will ever account for is spent before it is switched on, in the making. Keeping one another year is the closest thing there is to un-making it.`,
+    ],
+  },
+  {
+    label: 'How to read this',
+    paras: [
+      `Five objects follow: a phone, a laptop, a washing machine, a refrigerator and a car. Choose one from the bar at the bottom of the screen. Scroll, and it comes apart. As each part is outlined, it gives two accounts of itself: *the alibi,* the reason it was built that way, and *the bill,* what it costs when it gives up. At the end it goes back together and we do the arithmetic.`,
+      `Some of these companies have gotten better, and where they have, the page says so. Nothing here is a complaint about engineers, who mostly did exactly what the brief asked. The brief is the problem.`,
+    ],
+  },
+];
+
+export const THESIS = `Disposability is designed. We pay for it twice: once at the register, and again in the mining and the waste the price tag leaves out.`;
+
+export const ITEMS = [
+  {
+    slug: 'iphone',
+    name: 'iPhone',
+    kicker: 'The phone',
+    dek: 'A battery with a phone built around it.',
+    model: 'models/iphone.glb',
+    view: { pitch: 0.5, spin: 0.14, ex: 1.0, yaw: -0.5 },
+    lede: `The iPhone is the most repaired consumer object on earth and one of the most carefully defended. Apple has made real progress: a back that comes off without a laser, a repair manual anyone can download. It has also made sure that a genuine part, moved from one iPhone to another, can announce itself as a stranger.`,
+    facts: [['Parts modeled', '24'], ['Internal screws', '12 screws, 5 lengths'], ['Battery service', '$129, out of warranty']],
+    stations: [
+      {
+        parts: ['Pentalobe screws'],
+        title: 'The first lock is a screw head',
+        alibi: `Two tiny five-lobed screws beside the charging port hold the display to the frame. They are precise, they don't cam out, and they look tidy.`,
+        bill: `They also looked, in 2011, like a lock. When Apple started swapping them into iPhones, almost nobody sold a driver to fit. iFixit now sells one for a few dollars, which tells you how the lock works: it only stops the people who don't know it's there.`,
+      },
+      {
+        parts: ['Internal screws'],
+        title: 'Twelve screws, five lengths',
+        alibi: `Inside, the brackets that clamp each connector are held with screws in a handful of nearly identical lengths. Each is the shortest that will hold, which buys back fractions of a millimetre.`,
+        bill: `Put a long one into a short hole and it drives straight into the logic board or the back of the display. Technicians have a name for it, *long-screw damage,* and keep magnetic mats with maps drawn on them. A design that punishes a mix-up this hard was drawn for one person to open it: the factory.`,
+      },
+      {
+        parts: ['Cover glass', 'OLED display'],
+        title: 'The part you will break first',
+        alibi: `The screen is one laminated stack: cover glass, touch layer and OLED panel, bonded edge to edge so nothing catches light or dust. It looks like a single surface because it is one.`,
+        bill: `So a crack in a sheet of glass thinner than a credit card means replacing the whole display module, $329 at Apple for the last generation. The glass is the cheap layer. The panel underneath, grown in a cleanroom on a great deal of electricity, goes in the bin with it.`,
+      },
+      {
+        parts: ['Battery', 'Adhesive pull tabs'],
+        title: 'A consumable, glued in like a structure',
+        alibi: `The battery sits on stretch-release adhesive. Pull the tabs slowly and the glue lets go; on a good day that really is repair-friendly. It's also why nothing rattles, and why the cell can be a few millimetres bigger than a bracket would allow.`,
+        bill: `On a bad day a tab snaps and someone is levering a lithium cell with a plastic card, which is how repair fires start. And this is the one part guaranteed to wear out. Apple's own guidance warns that heat above 35°C can permanently cut capacity, and a phone charging overnight under a pillow lives warm. The cobalt inside is where this essay's numbers stop being abstract.`,
+      },
+      {
+        parts: ['TrueDepth camera'],
+        title: 'Parts that know whose phone they are in',
+        alibi: `The face-scanning camera is cryptographically paired to its logic board, so a thief can't swap in a module that unlocks for a different face.`,
+        bill: `The same pairing means a genuine part from another iPhone can arrive flagged as *unknown,* or with features switched off, until Apple's software approves it. Security is the alibi. The effect is that Apple decides which repairs count. Recent versions of iOS have relaxed this for some parts on some phones. The principle hasn't moved.`,
+      },
+      {
+        parts: ['Logic board', 'A-series chip', 'NAND storage', 'Modem and radios'],
+        title: 'Two circuit boards, one sandwich',
+        alibi: `Since 2017 the logic board has been two boards stacked on top of each other and joined by an interposer. It halves the footprint and leaves the room to the battery.`,
+        bill: `It also turns board repair into microsurgery, separating layers with heat without cooking the chips between them. Storage is soldered on, so a phone bought with too little stays that way. Chips like these are where most of an iPhone's manufacturing carbon goes, and that is the footprint that grows every time a phone is replaced instead of fixed.`,
+      },
+      {
+        parts: ['Back glass', 'MagSafe coil and magnets'],
+        title: 'Credit, and a catch',
+        alibi: `For years the back glass was bonded so firmly that shops took it off with lasers. Since the iPhone 14 and 15 generations, the inside has been redesigned so the back comes away on its own.`,
+        bill: `That's a real improvement and it deserves saying plainly. The catch is the coil behind it. Wireless charging loses part of its energy as heat, and heat is the thing batteries hate most. A convenience that quietly ages the one part guaranteed to wear out is a strange gift.`,
+      },
+      {
+        parts: ['Titanium frame', 'Aluminium midframe'],
+        title: 'The thinness that pays for all of it',
+        alibi: `Everything above serves this: a frame about eight millimetres thick. Screws need bosses, gaskets need grooves, connectors need height. Glue needs almost nothing.`,
+        bill: `Thin wins every meeting because you can see it in a shop, and you can't see a battery service. Nobody has ever returned a phone for being half a millimetre too thick.`,
+      },
+    ],
+    economics: {
+      title: 'The arithmetic',
+      bars: [['Battery service, iPhone 18 Pro', 129, 'fix'], ['Cracked screen, last generation', 329, 'fix'], ['A new Pro, roughly', 1100, 'new']],
+      body: `A battery is usually the whole difference between a phone that feels finished and one that doesn't. At $129 against roughly $1,100, the repair costs about twelve percent of the replacement, and keeping the old phone two more years saves close to a thousand dollars and the carbon of building a new one, which for a phone is most of the carbon there is. That gap is the entire argument for designing it to open.`,
+    },
+  },
+  {
+    slug: 'macbook',
+    name: 'MacBook Air',
+    kicker: 'The laptop',
+    dek: 'Thin enough to slide under a door. Sealed enough to stay there.',
+    model: 'models/macbook.glb',
+    view: { pitch: 0.42, spin: 0.12, ex: 1.0, yaw: -0.7 },
+    lede: `The MacBook Air is a brilliant computer with a short list of things you're allowed to change, and the list is empty. Memory, storage and processor are chosen once, at checkout, for the life of the machine. When the storage wears out, the computer does.`,
+    facts: [['Parts modeled', '21'], ['Upgradeable after purchase', 'None'], ['Battery service', 'up to $199']],
+    stations: [
+      {
+        parts: ['Pentalobe screws'],
+        title: 'The same screw, again',
+        alibi: `The bottom case comes off with pentalobe screws, the same five-lobed heads as on the phone. They keep the underside clean and flat.`,
+        bill: `For a technician it's ten seconds with the right bit. For everyone else it's a trip to find out the bit exists. Small frictions are the cheapest kind of lock, and they work on most people.`,
+      },
+      {
+        parts: ['Battery cells', 'Battery adhesive'],
+        title: 'Four cells, stuck down',
+        alibi: `The battery is four flat cells laid wherever the logic board isn't, held on strips of stretch-release adhesive. Glue means no battery frame, and no frame means a thinner machine.`,
+        bill: `Apple's current manual lets the battery out in a tray, which is progress. It is still a careful job, and Apple charges up to $199 for it. Laptops are thrown away for tired batteries all the time, usually by people nobody told that the battery is supposed to be the easy part.`,
+      },
+      {
+        parts: ['Soldered SSD'],
+        title: 'Storage with an expiry date',
+        alibi: `There is no drive. Storage is a pair of flash chips soldered to the logic board and run by the main processor. Apple gets speed, encryption tied to the chip, and one less connector.`,
+        bill: `Flash memory wears out; every cell survives a finite number of writes. In a laptop with an M.2 slot, a worn or too-small drive is a one-screw, twenty-minute swap. Here it is a new logic board, the most carbon-heavy part of the computer, scrapped for a chip the size of a postage stamp. And if the board dies, your files go with it.`,
+      },
+      {
+        parts: ['M-series chip and memory'],
+        title: 'Buy now, keep forever',
+        alibi: `The memory sits in the same package as the processor. That closeness is a large part of why Apple's chips are so fast and so frugal, and it's a fair trade on its own terms.`,
+        bill: `It also means the memory you pick at checkout is the memory the computer dies with. Apple charges hundreds of dollars for each step up, and there is no second chance. Plenty of these machines will be retired not because anything broke, but because they ran out of room they could never be given.`,
+      },
+      {
+        parts: ['Logic board', 'Heat spreader'],
+        title: 'No fan, all in',
+        alibi: `There is no fan. A thin sheet of metal spreads the chip's heat into the case, which is why the Air is silent and has almost nothing that wears mechanically.`,
+        bill: `Credit where it's due: nothing to clog with dust, no bearing to whine. The cost is that everything rides on one board. A failed power chip, a spilled coffee, a worn-out SSD: every one of them ends at the same component, and that component is replaced, not repaired.`,
+      },
+      {
+        parts: ['Display lid', 'Liquid Retina panel', 'Display glass and bezel', 'Display hinge', 'Display cable', 'FaceTime camera'],
+        title: 'The screen is a lid is a hinge',
+        alibi: `Panel, glass, camera, antennas and hinges are serviced as a single assembly. It keeps the lid thin and the seams invisible.`,
+        bill: `A cracked panel or a frayed display cable means the whole lid. The panel is the expensive part and the cable is the fragile one, and you can only buy them together.`,
+      },
+      {
+        parts: ['Port boards'],
+        title: 'The good news',
+        alibi: `The USB-C ports, the MagSafe connector and the headphone jack live on small separate boards, joined to the logic board by cables.`,
+        bill: `That's exactly right. Ports are what people break by tripping over cords, and here a broken port is a cheap module instead of a dead computer. It proves the point of this whole page: when Apple decides a part should be replaceable, it is.`,
+      },
+    ],
+    economics: {
+      title: 'The arithmetic',
+      bars: [['Battery service', 199, 'fix'], ['A new MacBook Air, roughly', 1000, 'new']],
+      body: `Laptops mostly die of three things: batteries, storage and spills. The Air makes the first repairable, the second impossible and the third total. If a tired battery is the only reason you're shopping, $199 buys years for about a fifth of a new machine. If it's the storage, there is no repair at Apple's counter, only a purchase, and a perfectly good screen, keyboard and case go out with the board.`,
+    },
+  },
+  {
+    slug: 'washer',
+    name: 'Front-load washer',
+    kicker: 'The washing machine',
+    dek: 'Built to spin a thousand times a minute for a decade. Built not to open.',
+    model: 'models/washer.glb',
+    view: { pitch: 0.3, spin: 0.12, ex: 1.0, yaw: -0.6 },
+    lede: `A washing machine is a motor, a drum, a pump and a block of concrete. The motor in this one will likely outlive everything it's bolted to. The bearings will not, and on many modern front-loaders the bearings live inside a tub that was welded shut at the factory.`,
+    facts: [['Parts modeled', '27'], ['Tub halves', '2, welded into 1'], ['Bearing and seal kit', 'under $70']],
+    stations: [
+      {
+        parts: ['Door bellow'],
+        title: 'Start with something fair',
+        alibi: `The rubber bellow seals the door to the tub and flexes every time the drum shifts.`,
+        bill: `It grows mould, it tears on a stray underwire, and it is replaceable: two clamp bands and an afternoon. Hold on to that. It's the last part on the inside of this machine you'll be able to say it about.`,
+      },
+      {
+        parts: ['Concrete counterweights'],
+        title: 'Ballast',
+        alibi: `Blocks of concrete are bolted to the tub to stop the machine walking across the floor at full spin. Concrete is cheap, dense and indifferent to water.`,
+        bill: `It is also dead weight, shipped across oceans, carried up stairs and, at the end, rarely recovered. A perfectly sensible part that tells you how little of a washer was ever meant to come back.`,
+      },
+      {
+        parts: ['Outer tub (welded shut)'],
+        title: 'The weld',
+        alibi: `The outer tub used to be two plastic halves bolted together around a gasket. On many current front-loaders the halves are welded into one: no gasket to leak, fewer fasteners, a faster assembly line.`,
+        bill: `Everything that wears is now inside it: the bearings, the seal, the spider. The only factory fix is a whole new tub with bearings pre-installed, and repair guides warn that a sealed-tub job can approach the price of a basic new machine. Thirty years of washers were built to be split. This one was built to be skipped.`,
+      },
+      {
+        parts: ['Bearings and seal'],
+        title: 'The part that actually fails',
+        alibi: `Two steel bearings carry the drum and a rubber seal keeps water out of them. That's the whole job.`,
+        bill: `Seals age, water gets in, the bearings rust and start to roar on the spin cycle. A bearing-and-seal kit sells for well under a hundred dollars, and on a bolted tub a patient person can fit one in a day. On a welded tub those same parts are only sold as passengers inside a new tub.`,
+      },
+      {
+        parts: ['Drum spider and shaft'],
+        title: 'The spider',
+        alibi: `A three-armed aluminium casting carries the drum on its shaft. Aluminium is light and casts easily.`,
+        bill: `It also corrodes in hot, detergent-heavy water, worst where it meets the steel shaft, and a cracked arm can chew up the tub around it. Sealed inside, the first warning anyone gets is the noise.`,
+      },
+      {
+        parts: ['Motor stator', 'Motor rotor'],
+        title: 'The motor that outlives everything',
+        alibi: `Direct drive puts the motor's magnets on a rotor bolted straight to the drum shaft. No belt, no brushes, very little to wear.`,
+        bill: `Credit where it's earned: these motors are tough, and makers advertise long warranties on them. Which leaves an odd picture. A motor rated for a decade of spinning, bolted to a drum it will outlast, inside a tub that can't be opened to change a sixty-dollar bearing.`,
+      },
+      {
+        parts: ['Main control board'],
+        title: 'The brain, discontinued',
+        alibi: `One board runs the cycles, the motor, the door lock and the display. One board is cheaper than five.`,
+        bill: `Boards fail from heat, surges and damp, and model-specific boards go out of production. When they do, a mechanically perfect washer becomes scrap for want of a part nobody makes. A study for Germany's environment agency found that the share of large appliances replaced within five years because of a defect more than doubled between 2004 and 2012, from 3.5 to 8.3 percent.`,
+      },
+    ],
+    economics: {
+      title: 'The arithmetic',
+      bars: [['Bearing and seal kit', 65, 'fix'], ['Replacement tub assembly, approx.', 500, 'new']],
+      body: `The sum only works if the tub opens. Bolted, a worn bearing costs about $65 and a Saturday. Welded, it costs a tub assembly of several hundred dollars plus labour, at which point most people sensibly buy a new machine and send seventy-odd kilograms of steel, plastic and concrete off on a truck. The motor, still fine, goes with it.`,
+    },
+  },
+  {
+    slug: 'fridge',
+    name: 'French-door refrigerator',
+    kicker: 'The refrigerator',
+    dek: 'A box of foam with a heart you can’t reach.',
+    model: 'models/fridge.glb',
+    view: { pitch: 0.24, spin: 0.12, ex: 1.0, yaw: -0.6 },
+    lede: `A refrigerator is the only appliance in the house that never gets a day off. This one is an LG French-door model with a linear compressor, a design LG sells on efficiency, quiet and twenty-year durability. Owners have taken that last claim to court more than once.`,
+    facts: [['Parts modeled', '24'], ['Sealed-system repair', '$600 to $1,400'], ['2020 settlement class', 'about 1.5 million owners']],
+    stations: [
+      {
+        parts: ['Polyurethane foam'],
+        title: 'The foam is the frame',
+        alibi: `Liquid foam is injected between the steel skin and the plastic liner, where it swells and sets. It insulates, and it glues the whole cabinet into one rigid box, so there's no frame to build.`,
+        bill: `Anything buried in it is buried for good: wiring, drain tubes, the refrigerant lines in the walls. At the end, the foam still holds its blowing agent, and US law doesn't require anyone to recover it, so it's usually released during shredding and landfill. Older fridges used CFC and HCFC agents that eat the ozone layer on the way out.`,
+      },
+      {
+        parts: ['Sealed-system tubing'],
+        title: 'A loop with no door',
+        alibi: `Copper tubing carries refrigerant from the compressor through the condenser and the evaporator and back again, brazed shut at every joint. A sealed system can't leak at a fitting because it has no fittings.`,
+        bill: `Repair means a certified technician cutting the loop open, recovering the refrigerant, brazing in a part, pulling a vacuum and recharging it. Cost guides put the whole job at roughly $600 to $1,400, often more than half the price of a new fridge, which is precisely the point where people stop repairing.`,
+      },
+      {
+        parts: ['Linear compressor'],
+        title: 'The heart, and the lawsuit',
+        alibi: `An ordinary compressor turns a crankshaft. A linear one drives its piston straight back and forth on a magnet: fewer moving parts, less friction, less noise, less power. It's a genuinely clever machine.`,
+        bill: `LG advertises twenty-year durability and a ten-year warranty on it. In 2020 LG settled a class action covering about 1.5 million owners of fridges built from 2014 to 2017, who said their linear compressors failed and stopped cooling; LG denied any defect. Newer suits make similar claims. A warranty on the part helps less than it sounds when the labour is sealed-system labour and the food has already spoiled.`,
+      },
+      {
+        parts: ['Evaporator and defrost heater'],
+        title: 'Cold, then hot, then cold',
+        alibi: `The evaporator is where the cold is made: refrigerant boils inside thin tubing threaded through aluminium fins, and a heater melts the frost off a few times a day.`,
+        bill: `Thin tubing, moisture and thousands of heat cycles are a recipe for pinhole leaks, and at least one lawsuit traces LG's trouble here rather than to the compressor. Either way, a hole in the evaporator is a hole in the sealed system. See above, and add a few hundred dollars.`,
+      },
+      {
+        parts: ['In-door ice maker'],
+        title: 'The hardest way to make the cheapest thing',
+        alibi: `Putting the ice maker in the door frees shelf space and gives you ice and water without opening up. It sells fridges in every showroom.`,
+        bill: `It's a small freezer inside a door, with a motor, a heater, a water valve and an auger, all riding on something people slam. Cost guides list ice-maker repairs anywhere from $100 to $500. That is a great deal of machine for producing frozen tap water.`,
+      },
+      {
+        parts: ['Water filter'],
+        title: 'Built to be bought',
+        alibi: `The filter twists out of the ceiling in seconds, no tools, no manual.`,
+        bill: `It is the easiest part in the whole fridge to replace, and the only one you are expected to buy every six months. Notice which part got the good design.`,
+      },
+      {
+        parts: ['Left French door', 'Right French door', 'Glass shelves', 'Crisper drawers'],
+        title: 'The easy stuff',
+        alibi: `Door gaskets press in, shelves lift out, bins clip on. Anything you touch every day was designed for you to replace.`,
+        bill: `And that's the tell. The people who designed this knew exactly how to make parts removable. They did it for the parts you can see and stopped at the parts you can't.`,
+      },
+    ],
+    economics: {
+      title: 'The arithmetic',
+      bars: [['Ice maker repair, mid-range', 300, 'fix'], ['Sealed-system repair, mid-range', 1000, 'fix'], ['A new French-door fridge, roughly', 2500, 'new']],
+      body: `A fridge usually lasts long enough to be forgiven. When it doesn't, the arithmetic is unkind: the failures that matter sit in the sealed system and cost close to half a new fridge, and the old one is a block of steel welded to foam that can't be cleanly recycled. The EPA estimates that properly retiring a thousand old refrigerators avoids about 4,260 tonnes of CO₂-equivalent. Most are never retired properly.`,
+    },
+  },
+  {
+    slug: 'model-y',
+    name: 'Tesla Model Y',
+    kicker: 'The car',
+    dek: 'The car is the battery is the floor.',
+    model: 'models/model_y.glb',
+    view: { pitch: 0.34, spin: 0.08, ex: 1.0, yaw: -0.8 },
+    lede: `The Model Y is one of the best-selling cars in the world and a masterclass in building things quickly. Its body hangs from two giant castings and, in the structural-pack version modeled here, a battery that doubles as the floor. Nearly every choice that makes it cheaper to build makes it harder to fix, and the bill lands on insurers first and on everyone's premiums after.`,
+    facts: [['Parts modeled', '39'], ['Cells in this model', '864'], ['Parts one rear casting replaced', 'about 70']],
+    stations: [
+      {
+        parts: ['Front megacasting', 'Rear megacasting'],
+        title: 'Seventy parts, one pour',
+        alibi: `A press the size of a house forces molten aluminium into a die and makes the rear underbody in one piece, replacing about seventy stamped and welded parts and, by Tesla's count, around three hundred robots.`,
+        bill: `It is brilliant manufacturing. In a crash, though, a stamped rail can be cut out and a new one welded in; a casting is one enormous part. Tesla says the castings can be repaired by sectioning. Repairers and insurers have treated them warily anyway, and wary is expensive.`,
+      },
+      {
+        parts: ['Pack lid (the cabin floor)', 'Battery pack tray'],
+        title: 'The battery is the floor',
+        alibi: `In the structural pack, the lid of the battery is the floor of the car, and the front seats bolt straight onto it. Taking out a layer of structure saves weight and money.`,
+        bill: `So the most expensive component in the car is also part of its body, and whatever damages one damages the other. Replacing a pack can cost more than $15,000, which turns a scraped underside into a financial event.`,
+      },
+      {
+        parts: ['4680 cells'],
+        title: 'Cells you can’t get to',
+        alibi: `Tesla's large 4680 cells stand in a tight honeycomb across the tray. Bigger cells mean fewer connections and a simpler pack.`,
+        bill: `Their nickel-rich cathodes come from mines somewhere specific, worked by someone specific. And no single cell can be tested or swapped, because of what happens next.`,
+      },
+      {
+        parts: ['Structural foam'],
+        title: 'And then they poured foam on it',
+        alibi: `The cells are set in structural foam that fills every gap, locking them in place and stiffening the pack enough to carry the car.`,
+        bill: `The teardown engineer Sandy Munro rated the pack's repairability at *zero* and said it was "going straight to the grinder." In 2023 Reuters found insurers writing off low-mileage EVs over minor battery damage, because packs like this can't be opened or diagnosed. A car bought to cut emissions, scrapped for a scratch.`,
+      },
+      {
+        parts: ['Glass roof and windows'],
+        title: 'The sky, in one piece',
+        alibi: `The roof is one sweep of tinted laminated glass. It makes the cabin feel enormous and saves a headliner.`,
+        bill: `It is also one of the largest single pieces of glass in a passenger car. A branch or a hailstone that cracks it means replacing the whole panel, made in a furnace and shipped intact across a continent.`,
+      },
+      {
+        parts: ['Front left wheel and tyre', 'Front right wheel and tyre', 'Rear left wheel and tyre', 'Rear right wheel and tyre'],
+        title: 'Heavier, so it sheds more',
+        alibi: `EVs are heavy, and the battery alone weighs several hundred kilograms. Instant torque is fun. Tyres absorb both.`,
+        bill: `Weight and torque wear tyres faster, and the rubber doesn't vanish; it becomes fine particles on roads and in rivers. Here, finally, is a part designed to be replaced, and it gets replaced more often than before.`,
+      },
+      {
+        parts: ['Heat pump and Octovalve'],
+        title: 'Clever, and singular',
+        alibi: `One valve block with eight ports routes heat between battery, motors and cabin, and lets the car warm itself with a heat pump instead of a resistive heater. It's elegant and it adds winter range.`,
+        bill: `Elegant systems tend to become single parts. When everything thermal flows through one assembly, one failure is a whole-system repair.`,
+      },
+      {
+        parts: ['Front drive unit', 'Rear drive unit'],
+        title: 'Built to last, honestly',
+        alibi: `The drive units, each a motor, gearbox and inverter, are compact and sealed and have very few wearing parts.`,
+        bill: `They have proved durable, and it's worth saying because it's the point. A car whose motors could run for decades sits on a pack that a parking-lot kerb can disqualify. The weak link wasn't an accident.`,
+      },
+    ],
+    economics: {
+      title: 'The arithmetic',
+      bars: [['Battery pack replacement, can exceed', 15000, 'fix'], ['A new Model Y, roughly', 45000, 'new']],
+      body: `An electric car is still the cleaner car over its life; the International Energy Agency's lifecycle numbers are clear about that. But only if it gets to live that life. Building a battery puts a carbon debt on day one that years of driving pay back. Write the car off at twenty thousand miles over a scraped pack and the debt is never cleared, and the next car starts a new one.`,
+    },
+  },
+];
+
+export const WORKS_CITED = [
+  `Amnesty International. <em>“This Is What We Die For”: Human Rights Abuses in the Democratic Republic of the Congo Power the Global Trade in Cobalt.</em> Amnesty International, 2016.`,
+  `Apple. “Batteries: Maximizing Performance.” <em>Apple,</em> www.apple.com/batteries/maximizing-performance. Accessed 25 Nov. 2026.`,
+  `Apple. “MacBook Air (13-inch, M4, 2025) Battery.” <em>Apple Support,</em> support.apple.com/121944. Accessed 25 Nov. 2026.`,
+  `Apple. <em>Product Environmental Report: iPhone 17 Pro.</em> Apple, Sept. 2025.`,
+  `Baldé, Cornelis P., et al. <em>The Global E-waste Monitor 2024.</em> International Telecommunication Union and UNITAR, 2024.`,
+  `Carey, Nick, et al. “Scratched EV Battery? Your Insurer May Have to Junk the Whole Car.” <em>Reuters,</em> 20 Mar. 2023.`,
+  `“Front Load Washer Tub Bearing and Seal Kit.” <em>eBay,</em> listing 321306015693. Accessed 25 Nov. 2026.`,
+  `Graham, Adam. “How Much Does It Cost to Repair a Refrigerator?” <em>Fixr,</em> 29 Aug. 2025.`,
+  `“Here’s How Much a MacBook Neo Repair Will Cost You.” <em>9to5Mac,</em> 9 Mar. 2026.`,
+  `iFixit. Teardowns and repair guides for iPhone and MacBook Air. <em>iFixit,</em> www.ifixit.com. Accessed 25 Nov. 2026.`,
+  `International Energy Agency. <em>Global EV Outlook 2024.</em> IEA, 2024.`,
+  `Krajewski, Markus. “The Great Lightbulb Conspiracy.” <em>IEEE Spectrum,</em> 24 Sept. 2014.`,
+  `“LG Fridge Compressors: Take Action Over Cooling Problems.” <em>ClassAction.org.</em> Accessed 25 Nov. 2026.`,
+  `Noel, Sarah. “Refrigerator Repair Cost.” <em>HomeGuide,</em> 2025.`,
+  `“Owners of Expensive Refrigerators Breaking Early in Their Lifespan File Lawsuits Claiming Fraud.” <em>NBC 5 Chicago.</em> Accessed 25 Nov. 2026.`,
+  `Prakash, Siddharth, et al. <em>Einfluss der Nutzungsdauer von Produkten auf ihre Umweltwirkung: Schaffung einer Informationsgrundlage und Entwicklung von Strategien gegen „Obsoleszenz“.</em> Umweltbundesamt, 2016.`,
+  `“Apple Increased the Price of iPhone 18 Pro Battery Repairs.” <em>Tom’s Guide,</em> 2026.`,
+  `“Tesla Releases Video of Giga Press in Action Producing Giant Single-Piece Rear Body.” <em>Electrek,</em> 4 Feb. 2021.`,
+  `U.S. Environmental Protection Agency. “Appliance Disposal” and “Responsible Appliance Disposal (RAD) Program.” <em>EPA.</em> Accessed 25 Nov. 2026.`,
+  `“Washing Machine Bearing Replacement Cost: Repair or Replace?” <em>DG Floors.</em> Accessed 25 Nov. 2026.`,
+  `“Here’s How Much iPhone Air Battery Replacements and Repairs Will Cost You.” <em>PhoneArena,</em> Sept. 2025.`,
+];
