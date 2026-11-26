@@ -27,13 +27,13 @@
 // - Helpers: Letter spaced text, outlined text, money formatting
 
 // 4. CLASSES
-// - Spaceship: Rotate, thrust with no brakes, engine flame, laser nose position, hull and invincibility frames
+// - Spaceship: Turns to face the mouse, thrust with no brakes, engine flame, laser nose position, hull and invincibility frames
 // - SpaceObject: Debris, satellites, the ISS, and power ups. Rides its orbit until something knocks it loose, then gravity takes over
 // - Particle Classes: Laser sparks, debris chunks, explosions, and floating cash text
 
 // 5. INTERACTIVITY & LOGIC
-// - Keyboard Inputs: A/D rotate, W thrust, Spacebar laser, P pause, Enter/M on the results screen
-// - Mouse Inputs: Title screen and results panel buttons
+// - Keyboard Inputs: Spacebar thrust, P pause, M music, Enter to start or continue, Esc back to the menu
+// - Mouse Inputs: Aim with the cursor, hold left click for the laser, start/results/music buttons
 // - Laser Logic: Raycast from the nose and burn whatever it hits first
 // - Engine Push Logic: Anything inside the flame gets shoved away from the ship
 // - Collision Logic: Ship vs objects, objects vs objects, anything vs the ISS
@@ -62,6 +62,8 @@ let sndDebris, sndSatExplode, sndBigExplode, sndCollision; // Destruction sounds
 let sndPowerUp, sndRadio, sndClick, sndPenalty; // Feedback sounds
 let sndWin, sndLose; // Jingles for the results screens
 let lastBumpSound = 0; // Frame of the last object vs object clang, so a pileup doesn't play 20 clangs at once
+let musicOn = true; // Music toggle (M key or the note button)
+let laserLocked = true; // Stops the click that started the level from also firing the laser until the mouse is let go
 
 // Game State Variables
 let gameState = 0; // 0 = Title, 1 = Playing, 2 = Paused, 3 = Contract Complete, 4 = Mission Failed
@@ -98,23 +100,23 @@ let warnedKessler = false;
 let warnedBurnUp = false;
 
 // Layout Variables
-let worldSize = 2200; // The map is a 2200x2200 square and the camera follows the ship around it (the screen only shows a 1280x720 window of it)
-let earthX = 1100; // Earth center X (middle of the map)
-let earthY = 1100; // Earth center Y
+let worldSize = 2800; // The map is a 2800x2800 square and the camera follows the ship around it (the screen only shows a 1280x720 window of it)
+let earthX = 1400; // Earth center X (middle of the map)
+let earthY = 1400; // Earth center Y
 let earthR = 120; // Earth radius, not counting the atmosphere glow
-let issOrbit = 820; // The ISS always flies the outermost orbit, so anything pushed off the map has to cross it
-let orbitRings = [320, 570, 820]; // Dashed guide rings
-let camX = 1100; // Camera center X in map coordinates
-let camY = 1100; // Camera center Y in map coordinates
+let issOrbit = 650; // The ISS flies a low orbit like the real one, with junk orbiting both below and above it
+let orbitRings = [400, 650, 950, 1250]; // Dashed guide rings
+let camX = 1400; // Camera center X in map coordinates
+let camY = 1400; // Camera center Y in map coordinates
 
 // Tuning Variables (all the numbers from the GDD values table live here so balancing is just editing numbers)
 let gravity = 740; // Gravity strength (GM). Higher = faster orbits and harder pull back toward Earth
-let startCash = 500; // Every level starts at $500
+let startCash = 1000; // Every level starts at $1,000 (at $500 one lost satellite right at the start was an instant game over)
 let hullMax = 5; // Hull segments
 let batteryMax = 1200; // 20 seconds of laser at 60fps
 let satDamageCost = 250; // First hit on a working satellite
 let satDestroyCost = 500; // Extra cost when it's destroyed (250 + 500 = 750 total, matches the GDD)
-let turnSpeed = 3.5; // Degrees per frame for A and D
+let turnSpeed = 9; // Max degrees per frame the ship can turn while chasing the cursor
 let thrustPower = 0.08; // Acceleration per frame while holding W
 let maxSpeed = 6; // Speed cap for the ship
 let flameLength = 58; // How far the engine flame reaches, which is also the push range
@@ -141,11 +143,11 @@ let types = { // Everything that can be in orbit. r = hit radius, hp = seconds o
 }; // End types object
 
 let levels = [ // Only the amount of junk and satellites changes between levels, the laser battery stays the same
-  { target: 2000, small: 8,  medium: 3, large: 2, huge: 0, satellites: 2 }, // Level 1: enough battery to win with just the laser
-  { target: 2500, small: 10, medium: 4, large: 2, huge: 1, satellites: 3 }, // Level 2
-  { target: 3000, small: 12, medium: 5, large: 3, huge: 1, satellites: 4 }, // Level 3: pushing starts to matter
-  { target: 3500, small: 10, medium: 5, large: 3, huge: 1, satellites: 4 }, // Level 4
-  { target: 4000, small: 12, medium: 6, large: 3, huge: 2, satellites: 5 }  // Level 5: crowded
+  { target: 2500, small: 10, medium: 4, large: 2, huge: 0, satellites: 3 }, // Level 1: enough battery to win with just the laser
+  { target: 3000, small: 13, medium: 5, large: 3, huge: 1, satellites: 4 }, // Level 2
+  { target: 3500, small: 15, medium: 6, large: 3, huge: 1, satellites: 5 }, // Level 3: pushing starts to matter
+  { target: 4000, small: 15, medium: 7, large: 4, huge: 2, satellites: 6 }, // Level 4
+  { target: 4500, small: 17, medium: 8, large: 4, huge: 2, satellites: 7 }  // Level 5: crowded
 ]; // End levels array
 
 // ******************************************
@@ -221,7 +223,7 @@ function setup() { // Initializes the canvas and core game settings
   sndWin.setVolume(0.5); // Win jingle at 50%
   sndLose.setVolume(0.5); // Lose jingle at 50%
 
-  sndTitleMusic.loop(); // Title music (browsers hold it until the first click or key press, then it starts)
+  if (musicOn) sndTitleMusic.loop(); // Title music (browsers hold it until the first click or key press, then it starts)
 } // End setup function
 
 
@@ -233,7 +235,11 @@ function draw() { // Main game loop that runs 60 times a second
 
   if (gameState === 0) { // Title screen
     image(imgTitle, width / 2, height / 2, width, height); // The title artboard already has the logo, controls, and start prompt on it
+    drawTitleControls(); // Controls list (drawn in code over the artboard's old W/A/D list)
+    drawStartButton(); // Start button (drawn over the artboard's button so it can be clicked and say Enter)
+    drawMusicButton(1200, 22, 56, 56); // Music toggle in the top right corner
     drawTitleCredits(); // Music and sound effect credits along the bottom
+    cursor(ARROW); // Normal cursor on the title screen
     stateTimer++; // Counts frames on the title screen
     return; // Nothing else to draw
   } // End title screen
@@ -271,6 +277,12 @@ function draw() { // Main game loop that runs 60 times a second
   drawHUD(); // Cash, level, hull, battery, radio
 
   // 4. OVERLAYS
+  if (gameState === 1) { // Playing
+    noCursor(); // Hides the normal cursor
+    drawReticle(); // Crosshair where the ship is aiming
+  } else { // Paused or results
+    cursor(ARROW); // Normal cursor for clicking buttons
+  } // End cursor check
   if (gameState === 2) drawPauseOverlay(); // Paused
   if (gameState === 3) drawResultsPanel(true); // Contract complete
   if (gameState === 4) drawResultsPanel(false); // Mission failed
@@ -283,7 +295,7 @@ function updateGame() { // Everything that happens in one frame of gameplay
   ship.update(); // Rotation, thrust, edges, Earth bounce
 
   // Laser
-  ship.isFiring = keyIsDown(32) && ship.battery > 0; // Spacebar fires only if there's battery left
+  ship.isFiring = laserHeld() && ship.battery > 0; // Left click fires only if there's battery left
   sndLaser.setVolume(ship.isFiring ? 0.25 : 0, 0.05); // Fades the laser hum in and out
   ship.beamEnd = null; // Clears last frame's beam
   if (ship.isFiring) { // If firing
@@ -511,6 +523,9 @@ function drawHUD() { // Everything that sits on top of the game
   let lowBlink = charge < 0.25 && frameCount % 30 < 15; // Blinks when low
   fill(lowBlink ? color(255, 110, 90) : color(61, 225, 255)); // Cyan, or red when blinking
   if (charge > 0) rect(132, 662, max(20, 250 * charge), 20, 10); // Battery fill
+
+  // Music toggle (left of the level badge)
+  drawMusicButton(1028, 22, 56, 60); // Note button
 
   // Minimap (top right, under the level badge)
   drawMinimap(); // Whole map shrunk down so you can find stuff off screen
@@ -754,6 +769,86 @@ function outlinedText(str, x, y) { // White title text with a thick dark outline
   text(str, x, y); // Fill
 } // End outlined text function
 
+function drawTitleControls() { // Controls list in the top left, matching the style of the artboard
+  push(); // Controls container
+  noStroke(); // No outline
+  fill(11, 16, 38); // Same navy as the background
+  rect(0, 28, 320, 134); // Covers the old W/A/D list baked into the title image
+  let rows = [["MOUSE", "Aim"], ["LEFT CLICK", "Laser Beam"], ["SPACEBAR", "Thrust"], ["P", "Pause"], ["M", "Music"]]; // Key and action pairs
+  textFont(fontMedium); // Regular weight
+  textSize(19); // Same size as the artboard
+  for (let i = 0; i < rows.length; i++) { // One row at a time
+    let y = 58 + i * 22; // Row baseline
+    fill(230, 57, 70); // Red keys
+    spacedText(rows[i][0], 127, y, 1.5, RIGHT); // Key, right aligned against the divider
+    fill(214, 220, 235); // Light gray actions
+    spacedText(rows[i][1], 141, y, 1.5, LEFT); // Action
+  } // End rows loop
+  stroke(230, 57, 70); // Red divider
+  strokeWeight(1.5); // Thin
+  line(134, 42, 134, 152); // Divider line
+  pop(); // End controls container
+} // End title controls function
+
+function drawStartButton() { // Clickable start button over the one in the artboard
+  let hover = overBox(640 - 230, 462 - 33, 460, 66); // Mouse over check
+  push(); // Button container
+  rectMode(CENTER); // Draw from center
+  stroke(28, 33, 48); // Dark outline
+  strokeWeight(6); // Thick like the artboard
+  fill(hover ? color(240, 110, 70) : color(228, 87, 46)); // Orange, lighter on hover
+  rect(640, 462, 460, 66, 33); // Pill
+  noStroke(); // Text has no outline
+  fill(255); // White
+  textFont(fontBold); // Bold
+  textSize(30); // Size
+  spacedText("PRESS ENTER TO START", 640, 473, 3, CENTER); // Label
+  pop(); // End button container
+} // End start button function
+
+function drawMusicButton(x, y, w, h) { // Note icon that turns the music on and off
+  push(); // Button container
+  let hover = overBox(x, y, w, h); // Mouse over check
+  fill(hover ? color(28, 38, 78) : color(19, 26, 56)); // Panel fill, lighter on hover
+  stroke(38, 140, 170); // Teal border
+  strokeWeight(3); // Border thickness
+  rect(x, y, w, h, 14); // Panel
+  let cx = x + w / 2; // Icon center X
+  let cy = y + h / 2; // Icon center Y
+  noStroke(); // Note heads
+  fill(musicOn ? 255 : color(120, 130, 160)); // White when on, gray when off
+  ellipse(cx - 8, cy + 9, 11, 8); // Left note head
+  ellipse(cx + 8, cy + 6, 11, 8); // Right note head
+  stroke(musicOn ? 255 : color(120, 130, 160)); // Stems and beam
+  strokeWeight(3); // Thickness
+  line(cx - 3, cy + 9, cx - 3, cy - 11); // Left stem
+  line(cx + 13, cy + 6, cx + 13, cy - 14); // Right stem
+  line(cx - 3, cy - 11, cx + 13, cy - 14); // Beam across the top
+  if (!musicOn) { // Off
+    stroke(255, 77, 77); // Red slash
+    strokeWeight(4); // Thick
+    line(cx - 16, cy - 16, cx + 16, cy + 16); // Slash
+  } // End off check
+  pop(); // End button container
+} // End music button function
+
+function drawReticle() { // Crosshair at the cursor (same idea as the scissor cursor from my bomb defusal game)
+  push(); // Reticle container
+  noFill(); // Hollow
+  let ready = ship.battery > 0; // Gray when the laser battery is empty
+  stroke(ready ? color(61, 225, 255) : color(120, 130, 160)); // Cyan or gray
+  strokeWeight(2); // Thin
+  circle(mouseX, mouseY, 24); // Ring
+  line(mouseX - 18, mouseY, mouseX - 9, mouseY); // Left tick
+  line(mouseX + 9, mouseY, mouseX + 18, mouseY); // Right tick
+  line(mouseX, mouseY - 18, mouseX, mouseY - 9); // Top tick
+  line(mouseX, mouseY + 9, mouseX, mouseY + 18); // Bottom tick
+  noStroke(); // Center dot
+  fill(ready ? color(61, 225, 255) : color(120, 130, 160)); // Same color
+  circle(mouseX, mouseY, 4); // Dot
+  pop(); // End reticle container
+} // End reticle function
+
 function drawTitleCredits() { // Credits for the music and sound effects on the title screen
   push(); // Credits container
   textFont(fontMedium); // Regular weight
@@ -798,9 +893,9 @@ function radio(who, msg) { // Shows a message in the bottom right bubble
 // ******************************************
 class Spaceship { // The player
   constructor() { // Initializes ship properties
-    this.pos = createVector(earthX - 960, earthY); // Starts on the left side of the map, outside every orbit
+    this.pos = createVector(earthX - 1250, earthY); // Starts near the left edge of the map, far from the ISS
     this.vel = createVector(0, 0); // Not moving
-    this.heading = 90; // Degrees, 0 = nose pointing up, so 90 points right at Earth
+    this.heading = 90; // Degrees, 0 = nose pointing up, so 90 points right toward Earth
     this.hull = hullMax; // Full hull
     this.battery = batteryMax; // Full laser battery
     this.invincible = 0; // Frames of invincibility after getting hit
@@ -829,10 +924,14 @@ class Spaceship { // The player
   } // End hit circles method
 
   update() { // Physics and input logic
-    if (keyIsDown(65)) this.heading -= turnSpeed; // A rotates left
-    if (keyIsDown(68)) this.heading += turnSpeed; // D rotates right
+    let aim = aimPoint(); // Where the cursor is on the map
+    if (dist(aim.x, aim.y, this.pos.x, this.pos.y) > 20) { // Ignores the cursor when it's right on top of the ship so it doesn't spin in circles
+      let want = atan2(aim.x - this.pos.x, -(aim.y - this.pos.y)); // Angle to the cursor (0 = up, same as heading)
+      let diff = ((want - this.heading + 540) % 360) - 180; // Shortest way around (-180 to 180)
+      this.heading += constrain(diff, -turnSpeed, turnSpeed); // Turns toward the cursor, capped so it swings around instead of snapping
+    } // End aim check
 
-    this.isThrusting = keyIsDown(87); // W thrusts
+    this.isThrusting = keyIsDown(32); // Spacebar thrusts
     if (this.isThrusting) { // If thrusting
       this.vel.add(p5.Vector.mult(this.forward(), thrustPower)); // Accelerates in the direction the nose is pointing
       this.vel.limit(maxSpeed); // Speed cap
@@ -1110,12 +1209,14 @@ class FloatingText { // "+$100" popups that float up and fade
 // ******************************************
 // --- SUBSECTION: KEYBOARD INPUTS ---
 // ******************************************
-function keyPressed() { // Runs once every time a key goes down (W/A/D/Spacebar are checked every frame with keyIsDown instead)
+function keyPressed() { // Runs once every time a key goes down (the spacebar thrust is checked every frame with keyIsDown instead)
   userStartAudio(); // Browsers block sound until the player presses something
   let k = key.toLowerCase(); // Caps lock proof
 
+  if (k === 'm') toggleMusic(); // M turns the music on and off from anywhere
+
   if (gameState === 0) { // Title screen
-    if (keyCode === 32) startLevel(0); // Spacebar starts level 1
+    if (keyCode === ENTER) { sndClick.play(); startLevel(0); } // Enter starts level 1
   } else if (gameState === 1 || gameState === 2) { // Playing or paused
     if (k === 'p') { // Pause key
       gameState = gameState === 1 ? 2 : 1; // Toggles pause
@@ -1124,7 +1225,7 @@ function keyPressed() { // Runs once every time a key goes down (W/A/D/Spacebar 
     } // End pause key
   } else if (stateTimer > 40) { // Results screens (short delay so a held key doesn't skip it)
     if (keyCode === ENTER) pressPrimary(); // Enter = next level / retry
-    if (k === 'm') goToMenu(); // M = menu
+    if (keyCode === ESCAPE) goToMenu(); // Esc = menu
   } // End state check
 
   if (keyCode === 32) return false; // Stops the spacebar from scrolling the page
@@ -1136,7 +1237,11 @@ function keyPressed() { // Runs once every time a key goes down (W/A/D/Spacebar 
 function mousePressed() { // Runs every time the mouse clicks
   userStartAudio(); // Browsers block sound until the player clicks something
   if (gameState === 0) { // Title screen
-    startLevel(0); // Clicking also starts the game (also gives the canvas keyboard focus when it's embedded)
+    if (overBox(1200, 22, 56, 56)) toggleMusic(); // Music button
+    else if (overBox(640 - 230, 462 - 33, 460, 66)) { sndClick.play(); startLevel(0); } // Start button
+  } else if ((gameState === 1 || gameState === 2) && overBox(1028, 22, 56, 60)) { // Music button in the HUD
+    toggleMusic(); // Music on/off
+    laserLocked = true; // Clicking the button shouldn't also fire the laser
   } else if ((gameState === 3 || gameState === 4) && stateTimer > 40) { // Results screen
     let py = 160 + 335; // Button row center Y
     if (abs(mouseY - py) < 27) { // Mouse is on the button row
@@ -1145,6 +1250,35 @@ function mousePressed() { // Runs every time the mouse clicks
     } // End row check
   } // End state check
 } // End mouse pressed function
+
+function mouseReleased() { // Runs when the mouse button comes back up
+  laserLocked = false; // Laser can fire again on the next click
+} // End mouse released function
+
+function aimPoint() { // Converts the cursor from screen position to map position
+  return createVector(mouseX - width / 2 + camX, mouseY - height / 2 + camY); // Undoes the camera translate
+} // End aim point function
+
+function laserHeld() { // True while the left mouse button is down
+  return mouseIsPressed && mouseButton === LEFT && !laserLocked; // Ignores the click that started the level
+} // End laser held function
+
+function overBox(x, y, w, h) { // Mouse inside a rectangle check
+  return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h; // Inside all four edges
+} // End over box function
+
+function toggleMusic() { // Music on and off
+  musicOn = !musicOn; // Flips it
+  sndClick.play(); // Click
+  if (!musicOn) { // Turning it off
+    sndTitleMusic.stop(); // Title music off
+    sndGameMusic.pause(); // Pauses gameplay music so it picks up where it left off
+  } else if (gameState === 0) { // Turning it on from the title
+    sndTitleMusic.loop(); // Title music
+  } else { // Turning it on during a level
+    sndGameMusic.loop(); // Gameplay music
+  } // End music check
+} // End toggle music function
 
 function pressPrimary() { // Next level, play again, or retry
   sndClick.play(); // Click
@@ -1156,7 +1290,7 @@ function goToMenu() { // Back to the title screen
   sndClick.play(); // Click
   silenceLoops(); // Laser and engine off
   sndGameMusic.stop(); // Stops gameplay music
-  if (!sndTitleMusic.isPlaying()) sndTitleMusic.loop(); // Title music back on
+  if (musicOn && !sndTitleMusic.isPlaying()) sndTitleMusic.loop(); // Title music back on
   gameState = 0; // Title state
   stateTimer = 0; // Resets the state timer
 } // End menu function
@@ -1462,15 +1596,19 @@ function collectPowerUp(p) { // Ship grabbed a power up
 
 function spawnOnOrbit(type) { // Puts a new object on a random orbit without overlapping anything
   let info = types[type]; // Type info
-  let minR = earthR + 60 + info.r; // Closest orbit allowed (bigger stuff has to orbit higher so it doesn't overlap Earth)
-  let maxR = issOrbit - types.iss.r - info.r - 80; // Farthest orbit allowed (stays well inside the ISS orbit, so one bump doesn't send it straight into the station)
+  let gap = types.iss.r + info.r + 70; // Empty lane kept around the ISS orbit so one bump doesn't send something straight into the station
+  let outerChance = info.group === 'satellite' ? 0.75 : 0.55; // Satellites mostly fly above the ISS (real GPS and comms satellites orbit way higher than it does)
+  let outer, minR, maxR; // Which band and its limits
   for (let attempts = 0; attempts < 200; attempts++) { // Safety counter so it can't loop forever
+    outer = random(1) < outerChance; // Below or above the ISS
+    minR = outer ? issOrbit + gap : earthR + 60 + info.r; // Low band starts just above Earth, high band starts just above the ISS lane
+    maxR = outer ? worldSize / 2 - info.r - 120 : issOrbit - gap; // Low band ends below the ISS lane, high band ends before the map edge
     let r = sqrt(random(minR * minR, maxR * maxR)); // Random orbit radius (square root trick so the outer orbits don't end up emptier than the inner ones)
     let a = random(360); // Random spot around Earth
     let x = earthX + cos(a) * r; // Where that is
     let y = earthY + sin(a) * r;
     let overlap = objects.some(o => dist(x, y, o.pos.x, o.pos.y) < info.r + o.r + 10); // Too close to something
-    let nearShip = dist(x, y, ship.pos.x, ship.pos.y) < 250; // Too close to the player
+    let nearShip = dist(x, y, ship.pos.x, ship.pos.y) < (info.group === 'satellite' ? 450 : 250); // Too close to the player (extra room for satellites so you don't torch one the second you hit thrust)
     if (!overlap && !nearShip) { // Spot is clear
       let o = new SpaceObject(type, r, a); // Makes the object
       objects.push(o); // Adds it
@@ -1537,7 +1675,8 @@ function startLevel(n) { // Loads a level from the levels array
   radio('mc', "Level " + (n + 1) + ". Clear " + money(target) + " worth of junk."); // Mission briefing
   sndTitleMusic.stop(); // Title music off
   sndGameMusic.setVolume(0.2, 0.3); // Brings the music back up if it was turned down on the results screen
-  if (!sndGameMusic.isPlaying()) sndGameMusic.loop(); // Gameplay music (keeps going between levels instead of restarting)
+  if (musicOn && !sndGameMusic.isPlaying()) sndGameMusic.loop(); // Gameplay music (keeps going between levels instead of restarting)
+  laserLocked = true; // The click on the start or next level button doesn't count as firing
   if (!sndLaser.isPlaying()) sndLaser.loop(); // Starts the silent laser loop
   if (!sndThrust.isPlaying()) sndThrust.loop(); // Starts the silent engine loop
 
